@@ -307,29 +307,10 @@ while ($row = $result->fetch_assoc()) {
                                 <label>RFID Tag</label>
                                 <input type="text" name="rfid_tag" class="input">
                             </div>
-                            <!-- <div>
+                            <div>
                                 <label>Face ID</label>
                                 <input type="text" name="face_id" class="input">
-                            </div> -->
-
-                            <div class="mt-4">
-                                <label class="font-bold">Face Registration</label>
-
-                                <div class="mb-2">
-                                    <select id="cameraSelector" class="border p-2 rounded w-full"></select>
-                                </div>
-
-                                <video id="addEmpCamera" autoplay playsinline style="width:100%; max-width:350px; border-radius:10px;"></video>
-
-                                <button type="button" class="btn btn-primary mt-3" onclick="captureFaceImage()">Capture Face</button>
-
-                                <div id="previewContainer" class="mt-3 hidden">
-                                    <p class="font-bold">Captured Image:</p>
-                                    <img id="capturedPreview" style="width:150px; border-radius:10px;">
-                                </div>
                             </div>
-
-                            <input type="hidden" id="captured_face_image" name="face_image">
                         </div>
                         <div class="flex justify-end mt-6 space-x-2">
                             <button type="button" class="btn btn-secondary" onclick="closeModals('addEmployeeModal')">Cancel</button>
@@ -514,110 +495,6 @@ while ($row = $result->fetch_assoc()) {
     }
 
 </style>
-<script>
-/* =============================
-   CAMERA INITIALIZATION
-============================= */
-
-let liveStream = null;
-
-// Load available cameras
-async function loadCameraDevices() {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(d => d.kind === "videoinput");
-
-        const selector = document.getElementById("cameraSelector");
-        selector.innerHTML = "";
-
-        videoDevices.forEach((device, index) => {
-            let opt = document.createElement("option");
-            opt.value = device.deviceId;
-            opt.textContent = device.label || `Camera ${index + 1}`;
-            selector.appendChild(opt);
-        });
-
-    } catch (err) {
-        console.error("Camera listing error:", err);
-        showNotification("Unable to load cameras.", "error");
-    }
-}
-
-// Start camera feed
-async function startAddEmployeeCamera() {
-    try {
-        await loadCameraDevices();
-
-        const selector = document.getElementById("cameraSelector");
-        const deviceId = selector.value;
-
-        // Stop previous stream safely
-        if (liveStream) {
-            liveStream.getTracks().forEach(t => t.stop());
-        }
-
-        liveStream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: deviceId ? { exact: deviceId } : undefined },
-            audio: false
-        });
-
-        const video = document.getElementById("addEmpCamera");
-        video.srcObject = liveStream;
-
-    } catch (error) {
-        console.error("Camera start error:", error);
-        showNotification("Cannot access camera.", "error");
-    }
-}
-
-// Change camera when user selects another device
-document.getElementById("cameraSelector").addEventListener("change", startAddEmployeeCamera);
-
-
-/* =============================
-   IMAGE CAPTURE FOR DATABASE
-============================= */
-
-function captureFaceImage() {
-    try {
-        const video = document.getElementById("addEmpCamera");
-
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Convert to base64 (safe for storing)
-        const imageData = canvas.toDataURL("image/jpeg", 0.9);
-
-        document.getElementById("captured_face_image").value = imageData;
-
-        // Preview to user
-        const preview = document.getElementById("capturedPreview");
-        preview.src = imageData;
-
-        document.getElementById("previewContainer").classList.remove("hidden");
-
-        showNotification("Face image captured.", "success");
-
-    } catch (err) {
-        console.error("Capture error:", err);
-        showNotification("Failed to capture image.", "error");
-    }
-}
-
-
-/* =============================
-   START CAMERA WHEN ADD EMPLOYEE MODAL OPENS
-============================= */
-
-function openAddEmployeeModal() {
-    openModal('addEmployeeModal');
-    startAddEmployeeCamera();
-}
-</script>
 <script>
     // Open modal
     function openModal(id) {

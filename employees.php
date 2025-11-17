@@ -90,10 +90,6 @@
     font-size: 1.1rem;
     padding: 5px 10px;
 }
-
-#liveCamera {
-    transform: scaleX(-1);
-}
 </style>
 
 <div id="tab-attendance">
@@ -202,20 +198,28 @@
         </div>
     </div>
 </div>
-<div id="rfidResultPanel" class="mt-2 text-center"></div>
-<div id="cameraContainer" style="display:none; margin-top:15px; text-align:center;">
-    <video id="liveCamera" autoplay playsinline style="width:100%; max-width:400px;"></video>
-</div>
-<script async src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-// --- GLOBAL FUNCTIONS (needed for onclick buttons) ---
-window.showMaintenanceMessage = function() {
+  function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => { notification.style.transform = 'translateX(100%)'; setTimeout(() => notification.remove(), 300); }, 3000);
+  }
+
+function showMaintenanceMessage() {
     const panel = document.getElementById('verificationPanel');
+
+    // Save original content
     const originalContent = panel.innerHTML;
+
+    // Show loading first
     panel.innerHTML = `
         <h4>Loading...</h4>
         <p class="card-description text-blue-600 font-medium">⏳ Please wait</p>
     `;
+
+    // After 1 seconds, show maintenance message
     setTimeout(() => {
         panel.innerHTML = `
             <h4>System Under Maintenance</h4>
@@ -223,378 +227,211 @@ window.showMaintenanceMessage = function() {
                 ⚠️ RFID Scan system is currently unavailable.
             </p>
         `;
-        setTimeout(() => { panel.innerHTML = originalContent; }, 2000);
+
+        // After another 2 seconds, restore original content
+        setTimeout(() => {
+            panel.innerHTML = originalContent;
+        }, 2000);
     }, 1000);
-};
+}
 
-window.submitManual = function() {
-    const employeeId = document.getElementById('employee_id').value;
-    if (!employeeId) return showNotification('Please enter Employee ID', 'error');
 
+  function submitManual() {
+      const employeeId = document.getElementById('employee_id').value;
+      if (!employeeId) return showNotification('Please enter Employee ID', 'error');
+
+      fetch('record_attendance.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `employee_id=${employeeId}`
+      })
+      .then(res => res.json())
+      .then(data => {
+          if (data.status === 'success') {
+              // Show success notification
+              showNotification(`${data.employee_name} Time ${data.type.toUpperCase()} recorded at ${data.time}`, 'success');
+              updateLiveAttendance(data);
+          } else if (data.status === 'warning') {
+              showNotification(`${data.employee_name || 'Employee #'+employeeId} ${data.message}`, 'warning');
+          } else {
+              showNotification(data.message, 'error');
+          }
+      })
+      .catch(err => console.error(err));
+  }
+
+
+  function formatTime(timeStr) {
+      if (!timeStr) return '-';
+      const [h, m, s] = timeStr.split(':');
+      const date = new Date();
+      date.setHours(h, m, s);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  }
+
+  function loadLiveAttendance() {
+      fetch('get_attendance.php')
+      .then(res => res.json())
+      .then(data => {
+          const table = document.getElementById('liveAttendanceTable');
+          const recent = document.getElementById('recentScans');
+
+          table.innerHTML = '';  // Clear current rows
+          recent.innerHTML = ''; // Clear recent scans
+
+          let recentEntries = [];
+
+          data.forEach(row => {
+              const timeIn = formatTime(row.time_in);
+              const timeOut = formatTime(row.time_out);
+
+              // Calculate hours
+              let hours = '-';
+              if (row.time_in && row.time_out) {
+                  const inTime = new Date(`1970-01-01T${row.time_in}`);
+                  const outTime = new Date(`1970-01-01T${row.time_out}`);
+                  const diff = (outTime - inTime) / (1000 * 60 * 60); // hours
+                  hours = diff.toFixed(2) + 'h';
+              }
+
+              // Determine status
+              const status = row.time_in ? 'Present' : '-';
+
+              // Add row to live table
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                  <td><strong>${row.employee_name}</strong></td>
+                  <td>${timeIn}</td>
+                  <td>${timeOut}</td>
+                  <td>${hours}</td>
+                  <td><span class="badge badge-success">Manual</span></td>
+                  <td><span class="badge badge-success">${status}</span></td>
+              `;
+              table.appendChild(tr);
+
+              // Collect recent scans
+              if(row.time_in) recentEntries.push(`${timeIn} - ${row.employee_name} (IN)`);
+              if(row.time_out) recentEntries.push(`${timeOut} - ${row.employee_name} (OUT)`);
+          });
+
+          // Sort by time descending and keep only latest 10
+          recentEntries.sort((a, b) => {
+              const timeA = a.split(' - ')[0];
+              const timeB = b.split(' - ')[0];
+              return timeB.localeCompare(timeA);
+          });
+
+          recentEntries.slice(0, 10).forEach(entry => {
+              const div = document.createElement('div');
+              div.innerText = entry;
+              recent.appendChild(div);
+          });
+      });
+  }
+
+  // Call on page load
+  loadLiveAttendance();
+
+  function updateLiveAttendance(data) {
+      // Simply reload the live table from DB
+      loadLiveAttendance();
+  }
+
+  // Function to update Verification Stats
+function updateStats(attendanceData) {
+    // Count totals
+    let totalRFID = 0;
+    let totalFace = 0;
+    let totalPresent = 0;
+
+    attendanceData.forEach(row => {
+        if (row.verification === 'RFID') totalRFID++;
+        if (row.verification === 'Face') totalFace++;
+        if (row.time_in) totalPresent++;
+    });
+
+    // Update badge values
+    document.getElementById('totalRFID').innerText = totalRFID;
+    document.getElementById('totalFace').innerText = totalFace;
+    document.getElementById('totalPresent').innerText = totalPresent;
+}
+
+
+// Update Security Alerts based on missing clock-out
+function updateSecurityAlerts(attendanceData) {
+    const alertsCard = document.querySelector('#tab-attendance .card:nth-child(2) .card-content');
+    alertsCard.innerHTML = `
+        <p>No security alerts detected</p>
+        <p class="card-description">System monitoring active</p>
+        <div class="mt-4">
+            <div class="badge badge-success">Fraud Prevention: Active</div>
+        </div>
+    `;
+}
+
+// Call refreshDashboard whenever attendance changes
+function refreshDashboard() {
+    fetch('get_attendance.php')
+    .then(res => res.json())
+    .then(data => {
+        updateStats(data);          // existing function to update counts
+        updateSecurityAlerts(data); // now shows missing clock-outs
+    })
+    .catch(err => console.error(err));
+}
+
+// Initial load and periodic refresh
+refreshDashboard();
+setInterval(refreshDashboard, 1000);
+
+let rfidBuffer = '';
+let rfidTimer;
+
+document.addEventListener('keydown', (e) => {
+    // Ignore modifier keys
+    if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') return;
+
+    // ✅ Ignore if the user is typing in an input or textarea
+    const activeTag = document.activeElement.tagName;
+    if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+
+    rfidBuffer += e.key;
+
+    clearTimeout(rfidTimer);
+    rfidTimer = setTimeout(() => {
+        if (rfidBuffer.length > 0) {
+            processRFID(rfidBuffer.trim());
+            rfidBuffer = '';
+        }
+    }, 50); // Adjust based on your scanner speed
+});
+
+
+function processRFID(rfid) {
     fetch('record_attendance.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `employee_id=${employeeId}`
+        body: `rfid_tag=${encodeURIComponent(rfid)}`
     })
     .then(res => res.json())
     .then(data => {
         if (data.status === 'success') {
-            showNotification(`${data.employee_name} Time ${data.type.toUpperCase()} recorded at ${data.time}`, 'success');
-            updateLiveAttendance(data);
+            showNotification(`✅ Attendance recorded for ${data.employee_name}`, 'success');
+            // Update live table & stats
+            loadLiveAttendance();
+            refreshDashboard();
         } else if (data.status === 'warning') {
-            showNotification(`${data.employee_name || 'Employee #'+employeeId} ${data.message}`, 'warning');
+            showNotification(`${data.employee_name || 'Employee #'+rfid} ${data.message}`, 'warning');
         } else {
             showNotification(data.message, 'error');
         }
     })
-    .catch(err => console.error(err));
-};
-
-window.startCameraTest = async function() {
-    const video = document.getElementById("liveCamera");
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    video.srcObject = stream;
-    video.play();
-
-    // Continuously check for a face
-    video.addEventListener("play", () => {
-        const canvas = faceapi.createCanvasFromMedia(video);
-        document.body.append(canvas);
-        
-        const displaySize = { width: video.width, height: video.height };
-        faceapi.matchDimensions(canvas, displaySize);
-        
-        setInterval(async () => {
-            const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
-            if (detections) {
-                startCountdown();
-            }
-        }, 1000);
-    });
+    .catch(err => console.error('RFID scan error:', err));
 }
 
-function startCountdown() {
-    let counter = 3;
-    const interval = setInterval(() => {
-        document.getElementById("countdown").innerText = counter;
-        counter--;
-        if (counter < 0) {
-            clearInterval(interval);
-            captureAndVerifyFace();
-        }
-    }, 1000);
-}
-</script>
 
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-    // --- DYNAMIC FACE-API.JS LOADING ---
-    if (!window.faceapi) {
-        await new Promise((resolve, reject) => {
-            const script = document.createElement("script");
-            script.src = "https://cdn.jsdelivr.net/npm/face-api.js";
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
 
-    // --- FACE API MODELS LOADING ---
-    let faceModelsLoaded = false;
-    async function loadFaceModels() {
-        if (faceModelsLoaded) return;
-        try {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('/project/models');
-            await faceapi.nets.faceLandmark68Net.loadFromUri('/project/models');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('/project/models');
-            faceModelsLoaded = true;
-        } catch (error) {
-            console.error('Model loading error:', error);
-            showNotification('Failed to load face models', 'error');
-        }
-    }
 
-    // --- CAMERA MANAGEMENT ---
-    let activeStream = null;
 
-    async function loadCameras() {
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(d => d.kind === "videoinput");
-            const selector = document.getElementById("cameraSelector");
-            selector.innerHTML = "";
-            videoDevices.forEach((device, index) => {
-                const opt = document.createElement("option");
-                opt.value = device.deviceId;
-                opt.textContent = device.label || `Camera ${index + 1}`;
-                selector.appendChild(opt);
-            });
-        } catch (error) {
-            console.error("Camera list error:", error);
-            showNotification("Unable to load camera list.", "error");
-        }
-    }
 
-    navigator.mediaDevices.getUserMedia({ video: true }).finally(loadCameras);
-
-    // --- NOTIFICATIONS ---
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
-    }
-
-    // --- TIME FORMATTING ---
-    function formatTime(timeStr) {
-        if (!timeStr) return '-';
-        const [h, m, s] = timeStr.split(':');
-        const date = new Date();
-        date.setHours(h, m, s);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
-    }
-
-    // --- LIVE ATTENDANCE ---
-    function loadLiveAttendance() {
-        fetch('get_attendance.php')
-        .then(res => res.json())
-        .then(data => {
-            const table = document.getElementById('liveAttendanceTable');
-            const recent = document.getElementById('recentScans');
-            table.innerHTML = '';
-            recent.innerHTML = '';
-            let recentEntries = [];
-            data.forEach(row => {
-                const timeIn = formatTime(row.time_in);
-                const timeOut = formatTime(row.time_out);
-                let hours = '-';
-                if (row.time_in && row.time_out) {
-                    const inTime = new Date(`1970-01-01T${row.time_in}`);
-                    const outTime = new Date(`1970-01-01T${row.time_out}`);
-                    hours = ((outTime - inTime)/(1000*60*60)).toFixed(2)+'h';
-                }
-                const status = row.time_in ? 'Present' : '-';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${row.employee_name}</strong></td>
-                    <td>${timeIn}</td>
-                    <td>${timeOut}</td>
-                    <td>${hours}</td>
-                    <td><span class="badge badge-success">Manual</span></td>
-                    <td><span class="badge badge-success">${status}</span></td>
-                `;
-                table.appendChild(tr);
-                if(row.time_in) recentEntries.push(`${timeIn} - ${row.employee_name} (IN)`);
-                if(row.time_out) recentEntries.push(`${timeOut} - ${row.employee_name} (OUT)`);
-            });
-            recentEntries.sort((a,b) => b.localeCompare(a));
-            recentEntries.slice(0,10).forEach(entry => {
-                const div = document.createElement('div');
-                div.innerText = entry;
-                recent.appendChild(div);
-            });
-        });
-    }
-
-    function updateLiveAttendance(data) {
-        loadLiveAttendance();
-    }
-
-    // --- STATS & SECURITY ---
-    function updateStats(attendanceData) {
-        let totalRFID = 0, totalFace = 0, totalPresent = 0;
-        attendanceData.forEach(row => {
-            if (row.verification === 'RFID') totalRFID++;
-            if (row.verification === 'Face') totalFace++;
-            if (row.time_in) totalPresent++;
-        });
-        document.getElementById('totalRFID').innerText = totalRFID;
-        document.getElementById('totalFace').innerText = totalFace;
-        document.getElementById('totalPresent').innerText = totalPresent;
-    }
-
-    function updateSecurityAlerts(attendanceData) {
-        const alertsCard = document.querySelector('#tab-attendance .card:nth-child(2) .card-content');
-        alertsCard.innerHTML = `
-            <p>No security alerts detected</p>
-            <p class="card-description">System monitoring active</p>
-            <div class="mt-4">
-                <div class="badge badge-success">Fraud Prevention: Active</div>
-            </div>
-        `;
-    }
-
-    function refreshDashboard() {
-        fetch('get_attendance.php')
-        .then(res => res.json())
-        .then(data => {
-            updateStats(data);
-            updateSecurityAlerts(data);
-        })
-        .catch(err => console.error(err));
-    }
-
-    refreshDashboard();
-    setInterval(refreshDashboard, 1000);
-
-    // --- RFID BUFFER ---
-    let rfidBuffer = '';
-    let rfidTimer;
-
-    document.addEventListener('keydown', (e) => {
-        if (['Shift','Control','Alt'].includes(e.key)) return;
-        if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
-        rfidBuffer += e.key;
-        clearTimeout(rfidTimer);
-        rfidTimer = setTimeout(() => {
-            if (rfidBuffer.length > 0) {
-                processRFID(rfidBuffer.trim());
-                rfidBuffer = '';
-            }
-        }, 50);
-    });
-
-    // --- RFID + FACE ATTENDANCE ---
-    async function processRFID(rfid) {
-        const res = await fetch('verify_rfid.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `rfid_tag=${encodeURIComponent(rfid)}`
-        });
-        const data = await res.json();
-        if (!data.success) return showNotification(data.message, "error");
-
-        const employee = data.employee;
-        await loadFaceModels();
-        await startCameraTest();
-
-        // Show RFID Verified and countdown below camera controls
-        document.getElementById("rfidResultPanel").innerHTML = `
-            <h3>RFID Verified: ${employee.first_name} ${employee.last_name}</h3>
-            <p class="card-description text-blue-600">Please stay still for <strong id="countdown">3</strong> seconds...</p>
-        `;
-
-        let counter = 3;
-        const interval = setInterval(() => {
-            counter--;
-            document.getElementById("countdown").innerText = counter;
-            if (counter === 0) {
-                clearInterval(interval);
-                captureAndVerifyFace(employee);
-            }
-        }, 1000);
-    }
-
-    async function captureAndVerifyFace(employee) {
-        const video = document.getElementById("liveCamera");
-        if (!video.videoWidth || !video.videoHeight) return showNotification("Camera not ready", "error");
-
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
-
-        const liveImage = await faceapi.detectSingleFace(canvas, options)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-        if (!liveImage) return showNotification("Face not detected. Please try again.", "error");
-
-        console.log("📸 RFID Employee:", employee.first_name, employee.last_name);
-        console.log("📸 Stored Face Path:", employee.face_image_path);
-
-        const storedImage = await faceapi.fetchImage(employee.face_image_path);
-        const storedDescriptor = await faceapi.detectSingleFace(storedImage, options)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-        if (!storedDescriptor) {
-            console.error("❌ Stored face image invalid or no face detected in stored image");
-            return showNotification("Stored face image invalid.", "error");
-        }
-
-        const distance = faceapi.euclideanDistance(liveImage.descriptor, storedDescriptor.descriptor);
-        const MATCH_THRESHOLD = 0.45;
-        
-        console.log("🔍 Face Matching Results:");
-        console.log("   Live Face Descriptor:", liveImage.descriptor);
-        console.log("   Stored Face Descriptor:", storedDescriptor.descriptor);
-        console.log("   Euclidean Distance:", distance);
-        console.log("   Match Threshold:", MATCH_THRESHOLD);
-        
-        if (distance <= MATCH_THRESHOLD) {
-            console.log("✅ MATCH! RFID verified. Face match confirmed.");
-            finalizeAttendance(employee.employee_id, "Face");
-        } else {
-            console.error("❌ NO MATCH! Distance (" + distance + ") exceeds threshold (" + MATCH_THRESHOLD + ")");
-            showNotification("Face mismatch detected!", "error");
-        }
-    }
-
-    function finalizeAttendance(employee_id, verificationType) {
-        // Capture the current frame from the video as base64
-        const video = document.getElementById("liveCamera");
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-        const face_image = canvas.toDataURL("image/jpeg"); // base64
-
-        fetch('record_attendance_face.php', {
-            method: 'POST',
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `employee_id=${employee_id}&face_image=${encodeURIComponent(face_image)}&verification=${verificationType}`
-        })
-        .then(res => res.json())
-        .then(data => {
-            console.log("PHP Debug Log:", data.debug);
-            if (data.success) {
-                showNotification("Attendance confirmed (Face Match).", "success");
-                loadLiveAttendance();
-                refreshDashboard();
-                
-                // Refresh the page after successful attendance
-                location.reload();
-            } else {
-                showNotification(data.message, "error");
-            }
-        });
-    }
-
-    // --- INITIAL LOAD ---
-    loadLiveAttendance();
-
-    // --- CAMERA START FUNCTION FOR BUTTON ---
-    window.startCameraTest = async function() {
-        const video = document.getElementById("liveCamera");
-        const container = document.getElementById("cameraContainer");
-        const cameraId = document.getElementById("cameraSelector").value;
-        try {
-            if (activeStream) activeStream.getTracks().forEach(track => track.stop());
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: cameraId ? { deviceId: { exact: cameraId } } : true,
-                audio: false
-            });
-            activeStream = stream;
-            video.srcObject = stream;
-            container.style.display = "block";
-            showNotification("Camera feed active.", "success");
-        } catch (error) {
-            console.error("Camera Error:", error);
-            showNotification("Unable to start the selected camera.", "error");
-        }
-    };
-
-    // Force console output
-    console.clear();
-    console.log("✅ Script loaded - Console is active");
-    window.addEventListener('error', (e) => console.error("Global Error:", e.error));
-    window.addEventListener('unhandledrejection', (e) => console.error("Unhandled Promise:", e.reason));
-
-    await startCameraTest(); // Automatically start the camera
-});
 </script>

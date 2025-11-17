@@ -18,10 +18,10 @@
                     <span class="icon">👥</span>
                     <span>Employee Management</span>
                 </button>
-                <button class="nav-item" data-tab="attendance">
+                <!-- <button class="nav-item" data-tab="attendance">
                     <span class="icon">⏰</span>
                     <span>Attendance Tracking</span>
-                </button>
+                </button> -->
                 <button class="nav-item" data-tab="timesheets">
                     <span class="icon">📋</span>
                     <span>Timesheet Processing</span>
