@@ -1,0 +1,2298 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<script src="{% static 'js/scripts.js' %}"></script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEPFS PayrollPro - Comprehensive Payroll Management System</title>
+    <style>
+        /* CSS Variables from globals.css */
+        :root {
+            --font-size: 14px;
+            --background: #ffffff;
+            --foreground: oklch(0.145 0 0);
+            --card: #ffffff;
+            --card-foreground: oklch(0.145 0 0);
+            --popover: oklch(1 0 0);
+            --popover-foreground: oklch(0.145 0 0);
+            --primary: #030213;
+            --primary-foreground: oklch(1 0 0);
+            --secondary: oklch(0.95 0.0058 264.53);
+            --secondary-foreground: #030213;
+            --muted: #ececf0;
+            --muted-foreground: #717182;
+            --accent: #e9ebef;
+            --accent-foreground: #030213;
+            --destructive: #d4183d;
+            --destructive-foreground: #ffffff;
+            --border: rgba(0, 0, 0, 0.1);
+            --input: transparent;
+            --input-background: #f3f3f5;
+            --switch-background: #cbced4;
+            --font-weight-medium: 500;
+            --font-weight-normal: 400;
+            --ring: oklch(0.708 0 0);
+            --radius: 0.625rem;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: var(--font-size);
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.5;
+        }
+
+        /* Typography matching globals.css */
+        h1 { font-size: 2rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
+        h2 { font-size: 1.5rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
+        h3 { font-size: 1.25rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
+        h4 { font-size: 1rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
+        p { font-size: 1rem; font-weight: var(--font-weight-normal); line-height: 1.5; }
+        label { font-size: 1rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
+        button { font-size: 1rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
+        input { font-size: 1rem; font-weight: var(--font-weight-normal); line-height: 1.5; }
+
+        /* Layout */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .space-y-1 > * + * { margin-top: 0.25rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+
+        /* Components */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header { padding: 1.5rem 1.5rem 0; }
+        .card-content { padding: 1.5rem; }
+        .card-title { font-size: 1.25rem; font-weight: var(--font-weight-medium); margin-bottom: 0.5rem; }
+        .card-description { color: var(--muted-foreground); font-size: 0.875rem; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: var(--font-weight-medium);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+
+        .btn-primary:hover { opacity: 0.9; }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--secondary-foreground);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--foreground);
+        }
+
+        .btn-ghost:hover { background: var(--accent); }
+
+        .btn-gradient {
+            background: linear-gradient(to right, #2563eb, #059669);
+            color: white;
+            height: 2.75rem;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(to right, #1d4ed8, #047857);
+        }
+
+        .input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--input-background);
+            font-size: 0.875rem;
+            height: 2.75rem;
+        }
+
+        .input:focus {
+            outline: 2px solid var(--ring);
+            outline-offset: 2px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: var(--font-weight-medium);
+        }
+
+        .badge-default { background: var(--primary); color: var(--primary-foreground); }
+        .badge-secondary { background: var(--secondary); color: var(--secondary-foreground); }
+        .badge-destructive { background: var(--destructive); color: var(--destructive-foreground); }
+        .badge-success { background: var(--success); color: white; }
+        .badge-warning { background: var(--warning); color: white; }
+
+        /* Login Screen Specific */
+        .login-container {
+            min-height: 100vh;
+            background: linear-gradient(to bottom right, #dbeafe, #ffffff, #dcfce7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 28rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 0;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .login-logo {
+            background: linear-gradient(to bottom right, #2563eb, #059669);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+            margin-right: 0.75rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted-foreground);
+            padding: 0.25rem;
+        }
+
+        .password-toggle:hover { color: var(--foreground); }
+
+        .security-notice {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+        }
+
+        .footer-icons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--muted-foreground);
+        }
+
+        /* Dashboard Layout */
+        .dashboard {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            text-align: left;
+            border: none;
+            background: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--foreground);
+        }
+
+        .nav-item:hover { background: var(--accent); }
+        .nav-item.active { background: var(--primary); color: var(--primary-foreground); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0.5rem 0;
+        }
+
+        .stat-description {
+            color: var(--muted-foreground);
+            font-size: 0.875rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table th {
+            font-weight: var(--font-weight-medium);
+            background: var(--muted);
+        }
+
+        .progress {
+            width: 100%;
+            height: 0.5rem;
+            background: var(--muted);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .tabs { width: 100%; }
+
+        .tab-list {
+            display: flex;
+            background: var(--muted);
+            border-radius: var(--radius);
+            padding: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-trigger {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: none;
+            background: none;
+            border-radius: calc(var(--radius) - 2px);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: var(--font-weight-medium);
+        }
+
+        .tab-trigger.active {
+            background: var(--background);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-left: left; }
+
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .ml-2 { margin-left: 0.5rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .mr-3 { margin-right: 0.75rem; }
+
+        .w-full { width: 100%; }
+        .h-4 { height: 1rem; }
+        .w-4 { width: 1rem; }
+        .h-11 { height: 2.75rem; }
+
+        .relative { position: relative; }
+        .pr-10 { padding-right: 2.5rem; }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid white;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Real-time updates */
+        .live-time {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 0.5rem;
+        }
+
+        .status-operational { background: #dcfce7; color: #166534; }
+        .status-warning { background: #fef3c7; color: #92400e; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+
+        /* Enhanced verification panels */
+        .verification-panel {
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        }
+
+        .scanning-active {
+            border-color: var(--info);
+            background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+            .main-content { padding: 1rem; }
+            .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Icons */
+        .icon {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
+        .icon-lg {
+            font-size: 2rem;
+        }
+
+        .icon-xl {
+            font-size: 3rem;
+        }
+
+        /* Enhanced gradients and effects */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .feature-highlight {
+            background: linear-gradient(135deg, #f0f9ff, #ecfdf5);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        /* Enhanced notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            color: white;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .notification.success { background: var(--success); }
+        .notification.error { background: var(--destructive); }
+        .notification.warning { background: var(--warning); }
+        .notification.info { background: var(--info); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Module status indicators */
+        .module-status {
+            padding: 0.5rem;
+            border-radius: var(--radius);
+            margin: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .module-operational {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid var(--success);
+        }
+
+        .module-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid var(--warning);
+        }
+
+        .module-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid var(--destructive);
+        }
+
+        /* Activity feed */
+        .activity-item {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            margin-bottom: 0.75rem;
+            background: #fafafa;
+            border-left: 3px solid var(--border);
+        }
+
+        .activity-success { border-left-color: var(--success); }
+        .activity-warning { border-left-color: var(--warning); }
+        .activity-info { border-left-color: var(--info); }
+        .activity-error { border-left-color: var(--destructive); }
+    </style>
+</head>
+<body>
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="mb-6">
+                <h3 class="gradient-text">🏗️ MEPFS PayrollPro</h3>
+                <p class="card-description">Research System v1.0</p>
+                <div class="mt-2">
+                    <p style="font-size: 0.75rem; color: var(--success);" class="live-time" id="currentTime"></p>
+                </div>
+            </div>
+            
+            <nav class="space-y-2">
+                <button class="nav-item active" data-tab="dashboard">
+                    <span class="icon">📊</span>
+                    <span>Dashboard Overview</span>
+                </button>
+                <button class="nav-item" data-tab="employees">
+                    <span class="icon">👥</span>
+                    <span>Employee Management</span>
+                </button>
+                <button class="nav-item" data-tab="attendance">
+                    <span class="icon">⏰</span>
+                    <span>Attendance Tracking</span>
+                </button>
+                <button class="nav-item" data-tab="timesheets">
+                    <span class="icon">📋</span>
+                    <span>Timesheet Processing</span>
+                </button>
+                
+                <div style="margin: 1rem 0; font-size: 0.75rem; font-weight: var(--font-weight-medium); color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.05em;">
+                    Analytics
+                </div>
+                
+                <button class="nav-item" data-tab="payroll">
+                    <span class="icon">💰</span>
+                    <span>Payroll Processing</span>
+                </button>
+                <button class="nav-item" data-tab="reports">
+                    <span class="icon">📊</span>
+                    <span>Reports & Security</span>
+                </button>
+                <button class="nav-item" data-tab="forecasting">
+                    <span class="icon">📈</span>
+                    <span>Payroll Forecasting</span>
+                </button>
+                
+                <div style="margin: 1rem 0; font-size: 0.75rem; font-weight: var(--font-weight-medium); color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.05em;">
+                    Research
+                </div>
+                
+                <button class="nav-item" data-tab="research">
+                    <span class="icon">🎓</span>
+                    <span>Research Compliance</span>
+                </button>
+            </nav>
+
+            <!-- System Status -->
+            <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                <h4 style="font-size: 0.75rem; font-weight: var(--font-weight-medium); color: var(--muted-foreground); margin-bottom: 0.5rem; text-transform: uppercase;">System Status</h4>
+                <div class="module-operational">
+                    <span style="font-size: 0.75rem;">All Systems</span>
+                    <span class="badge badge-success">✓</span>
+                </div>
+            </div>
+
+        <div style="margin-top: auto; padding-top: 2rem;">
+            {# This should link to your logout URL #}
+            <a href="{% url 'logout' %}" id="logoutBtn" class="btn btn-ghost w-full">
+                <span class="icon">↩️</span>
+                <span class="ml-2">Logout</span>
+            </a>
+        </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Dashboard Overview Tab -->
+            <div id="tab-dashboard" class="tab-content active">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1>MEPFS PayrollPro Dashboard</h1>
+                            <p class="card-description">Comprehensive payroll management for MEPFS construction projects</p>
+                        </div>
+                        <div class="text-right">
+                            <p style="font-size: 0.875rem; color: var(--muted-foreground);">Current Time</p>
+                            <p class="live-time" id="dashboardTime"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="card-description">Active MEPFS Engineers</p>
+                                <div class="stat-value">4</div>
+                                <p class="stat-description">4 present today</p>
+                                <p class="stat-description">All on time</p>
+                            </div>
+                            <span class="icon icon-lg" style="color: #3b82f6;">👥</span>
+                        </div>
+                        <div class="mt-4">
+                            <div class="progress">
+                                <div class="progress-fill" style="width: 100%"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground);">
+                            Employee Management
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="card-description">Verified Clock-ins</p>
+                                <div class="stat-value">96%</div>
+                                <p class="stat-description">RFID + Face verification</p>
+                                <p class="stat-description">Fraud prevention active</p>
+                            </div>
+                            <span class="icon icon-lg" style="color: #22c55e;">🛡️</span>
+                        </div>
+                        <div class="mt-4">
+                            <div class="progress">
+                                <div class="progress-fill" style="width: 96%"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground);">
+                            Attendance Management
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="card-description">Bi-weekly Payroll</p>
+                                <div class="stat-value">₱347,580</div>
+                                <p class="stat-description">Current period gross</p>
+                                <p class="stat-description">₱278,064 net</p>
+                            </div>
+                            <span class="icon icon-lg" style="color: #8b5cf6;">💰</span>
+                        </div>
+                        <div class="mt-4">
+                            <div class="progress">
+                                <div class="progress-fill" style="width: 80%"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground);">
+                            Payroll Processing
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="card-description">Pending Approvals</p>
+                                <div class="stat-value">12</div>
+                                <p class="stat-description">Timesheets awaiting review</p>
+                                <p class="stat-description">High priority</p>
+                            </div>
+                            <span class="icon icon-lg" style="color: #f59e0b;">📋</span>
+                        </div>
+                        <div class="mt-4">
+                            <div class="progress">
+                                <div class="progress-fill" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--muted-foreground);">
+                            Reports & Security
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Activity and System Health -->
+                <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 2fr 1fr;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Activity</h3>
+                            <p class="card-description">Latest system events and updates</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="space-y-1">
+                                <div class="activity-item activity-success">
+                                    <div class="badge badge-success">✅</div>
+                                    <div>
+                                        <p><strong>Christel Arpon</strong> clocked in successfully</p>
+                                        <p class="card-description">RFID + Face verification - 7:45 AM</p>
+                                    </div>
+                                </div>
+                                <div class="activity-item activity-info">
+                                    <div class="badge badge-default">💰</div>
+                                    <div>
+                                        <p>Bi-weekly payroll processed</p>
+                                        <p class="card-description">₱347,580 total gross pay - 2 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="activity-item activity-warning">
+                                    <div class="badge badge-secondary">📋</div>
+                                    <div>
+                                        <p>Timesheet submitted by <strong>Janico Castillo</strong></p>
+                                        <p class="card-description">Awaiting supervisor approval - 3 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="activity-item activity-success">
+                                    <div class="badge badge-success">🎯</div>
+                                    <div>
+                                        <p>Research compliance check passed</p>
+                                        <p class="card-description">ISO/IEC 25010:2015 standards verified - 5 hours ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">System Health</h3>
+                                <p class="card-description">Real-time monitoring</p>
+                            </div>
+                            <div class="card-content space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>RFID Scanner</span>
+                                        <span class="badge badge-success">Online</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 98%"></div>
+                                    </div>
+                                    <p class="card-description">98% success rate</p>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Face Recognition</span>
+                                        <span class="badge badge-success">Active</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 94%"></div>
+                                    </div>
+                                    <p class="card-description">94% accuracy</p>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Database Sync</span>
+                                        <span class="badge badge-success">Synced</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 100%"></div>
+                                    </div>
+                                    <p class="card-description">Last sync: <span id="lastSync">2 min ago</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Quick Actions</h3>
+                            </div>
+                            <div class="card-content space-y-2">
+                                <button class="btn btn-ghost w-full justify-start" onclick="switchTab('attendance')">
+                                    <span class="icon mr-2">⏰</span>
+                                    View Live Attendance
+                                </button>
+                                <button class="btn btn-ghost w-full justify-start" onclick="switchTab('payroll')">
+                                    <span class="icon mr-2">💰</span>
+                                    Process Payroll
+                                </button>
+                                <button class="btn btn-ghost w-full justify-start" onclick="switchTab('research')">
+                                    <span class="icon mr-2">🎓</span>
+                                    Research Dashboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FDD Module Status -->
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">FDD Module Status</h3>
+                        <p class="card-description">Four main functional modules of the MEPFS research system</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="grid grid-cols-1 gap-4" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="feature-highlight">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="icon">👥</span>
+                                        <strong>Employee Management</strong>
+                                    </div>
+                                    <span class="badge badge-success">Operational</span>
+                                </div>
+                                <p class="card-description mb-2">CRUD operations, RFID assignment</p>
+                                <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                                    Features: Add Employee • Update Record • Delete Record • Assign RFID
+                                </div>
+                            </div>
+
+                            <div class="feature-highlight">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="icon">⏰</span>
+                                        <strong>Attendance Management</strong>
+                                    </div>
+                                    <span class="badge badge-success">Operational</span>
+                                </div>
+                                <p class="card-description mb-2">RFID scan, face verify, fraud detection</p>
+                                <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                                    Features: Scan RFID • Face Verify • Log Time • Block Fraud
+                                </div>
+                            </div>
+
+                            <div class="feature-highlight">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="icon">💰</span>
+                                        <strong>Payroll Processing</strong>
+                                    </div>
+                                    <span class="badge badge-success">Operational</span>
+                                </div>
+                                <p class="card-description mb-2">Hours calculation, overtime, deductions</p>
+                                <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                                    Features: Calc Hours • Calc Overtime • Deduct Lates • Apply Rules
+                                </div>
+                            </div>
+
+                            <div class="feature-highlight">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="icon">📊</span>
+                                        <strong>Reports & Security</strong>
+                                    </div>
+                                    <span class="badge badge-success">Operational</span>
+                                </div>
+                                <p class="card-description mb-2">Attendance reports, payroll reports, encryption</p>
+                                <div style="font-size: 0.75rem; color: var(--muted-foreground);">
+                                    Features: Attendance Report • Payroll Report • Data Encrypt
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Management Tab -->
+            <div id="tab-employees" class="tab-content">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1>Employee & User Management</h1>
+                            <p class="card-description">Manage MEPFS construction project team members</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showNotification('Employee management feature activated', 'info')">
+                            <span class="icon">➕</span>
+                            <span class="ml-2">Add Employee</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 2fr 1fr;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Research Team Members</h3>
+                            <p class="card-description">Capstone research participants from Richwell Colleges</p>
+                        </div>
+                        <div class="card-content">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Hourly Rate</th>
+                                        <th>Status</th>
+                                        <th>RFID</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Christel Arpon</strong>
+                                                <div class="card-description">EMP001 • christel.arpon@richwell.edu.ph</div>
+                                                <div style="font-size: 0.75rem; color: var(--success);">Lead Researcher</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-default">⚡ Electrical</span>
+                                        </td>
+                                        <td>₱2,288/hr</td>
+                                        <td>
+                                            <span class="badge badge-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">RC001</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-ghost" onclick="showNotification('Edit employee feature', 'info')">✏️</button>
+                                            <button class="btn btn-ghost" onclick="showNotification('View employee details', 'info')">👁️</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Janico Castillo</strong>
+                                                <div class="card-description">EMP002 • janico.castillo@richwell.edu.ph</div>
+                                                <div style="font-size: 0.75rem; color: var(--info);">Research Member</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-destructive">🛡️ Fire Protection</span>
+                                        </td>
+                                        <td>₱2,019/hr</td>
+                                        <td>
+                                            <span class="badge badge-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">RC002</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-ghost" onclick="showNotification('Edit employee feature', 'info')">✏️</button>
+                                            <button class="btn btn-ghost" onclick="showNotification('View employee details', 'info')">👁️</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Angelica Villarisco</strong>
+                                                <div class="card-description">EMP003 • angelica.villarisco@richwell.edu.ph</div>
+                                                <div style="font-size: 0.75rem; color: var(--info);">Research Member</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">🔧 Mechanical</span>
+                                        </td>
+                                        <td>₱2,154/hr</td>
+                                        <td>
+                                            <span class="badge badge-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">RC003</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-ghost" onclick="showNotification('Edit employee feature', 'info')">✏️</button>
+                                            <button class="btn btn-ghost" onclick="showNotification('View employee details', 'info')">👁️</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Lealene Fajardo</strong>
+                                                <div class="card-description">EMP004 • lealene.fajardo@richwell.edu.ph</div>
+                                                <div style="font-size: 0.75rem; color: var(--info);">Research Member</div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-default">💧 Plumbing</span>
+                                        </td>
+                                        <td>₱1,938/hr</td>
+                                        <td>
+                                            <span class="badge badge-success">Active</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-secondary">RC004</span>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-ghost" onclick="showNotification('Edit employee feature', 'info')">✏️</button>
+                                            <button class="btn btn-ghost" onclick="showNotification('View employee details', 'info')">👁️</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Team Statistics</h3>
+                            </div>
+                            <div class="card-content space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Active Members</span>
+                                        <span>4/4</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>RFID Assigned</span>
+                                        <span>4/4</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Present Today</span>
+                                        <span>4/4</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 100%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Department Distribution</h3>
+                            </div>
+                            <div class="card-content space-y-2">
+                                <div class="flex justify-between">
+                                    <span>⚡ Electrical</span>
+                                    <span>25%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>🛡️ Fire Protection</span>
+                                    <span>25%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>🔧 Mechanical</span>
+                                    <span>25%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>💧 Plumbing</span>
+                                    <span>25%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Attendance Tracking Tab -->
+<div id="tab-attendance" class="tab-content">
+    <div class="mb-6">
+        <h1>Attendance Management</h1>
+        <p class="card-description">RFID + Biometric Face Verification System</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 2fr 1fr;">
+        <!-- Live Tracking -->
+        <div class="card">
+            <div class="card-header">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="card-title">Live Attendance Tracking</h3>
+                        <p class="card-description">Real-time attendance with dual verification</p>
+                    </div>
+                    <button class="btn btn-primary" id="scanRFID">
+                        <span class="icon">📱</span>
+                        <span class="ml-2">Scan RFID</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-content">
+                <div class="verification-panel mb-6" id="verificationPanel">
+                    <div class="text-center">
+                        <div class="icon icon-xl mb-4">📱</div>
+                        <h4>Ready for Verification</h4>
+                        <p class="card-description">Tap RFID card or click Scan RFID to begin</p>
+                    </div>
+                </div>
+
+                <!-- Existing Live Tracking Table -->
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Hours</th>
+                            <th>Verification</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liveAttendanceTable">
+                        <tr>
+                            <td><strong>Christel Arpon</strong></td>
+                            <td>7:45 AM</td>
+                            <td>-</td>
+                            <td class="live-time">9.5h</td>
+                            <td>
+                                <div class="flex gap-1">
+                                    <span class="badge badge-success">RFID</span>
+                                    <span class="badge badge-success">Face</span>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-success">Present</span></td>
+                        </tr>
+                        <!-- ... existing rows ... -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right Column Widgets -->
+        <div class="space-y-6">
+            <!-- Verification Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Verification Stats</h3>
+                </div>
+                <div class="card-content space-y-4">
+                    <!-- ... existing content ... -->
+                </div>
+            </div>
+
+            <!-- Security Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Security Alerts</h3>
+                </div>
+                <div class="card-content">
+                    <div class="text-center">
+                        <div class="icon icon-xl" style="color: var(--success);">✅</div>
+                        <p>No security violations detected</p>
+                        <p class="card-description">All verifications successful</p>
+                        <div class="mt-4">
+                            <div class="badge badge-success">Fraud Prevention: Active</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Scans -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Scans</h3>
+                </div>
+                <div class="card-content" id="recentScans">
+                    <!-- ... existing content ... -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Attendance Entry -->
+    <div class="card mt-8">
+        <div class="card-header flex items-center justify-between">
+            <h3 class="card-title">Manual Attendance Entry</h3>
+            <button class="btn btn-primary" onclick="addManualRow()">+ Add Record</button>
+        </div>
+        <div class="card-content">
+            <table class="table" id="manualAttendanceTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamic manual rows will go here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Manual Attendance -->
+<script>
+function addManualRow() {
+    const table = document.getElementById("manualAttendanceTable").querySelector("tbody");
+    const newRow = document.createElement("tr");
+
+    newRow.innerHTML = `
+        <td contenteditable="true">Enter Name</td>
+        <td contenteditable="true">Enter Position</td>
+        <td contenteditable="true">${new Date().toLocaleDateString()}</td>
+        <td contenteditable="true">${new Date().toLocaleTimeString()}</td>
+        <td>
+            <button class="btn btn-sm btn-success" onclick="saveRow(this)">Save</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteRow(this)">Delete</button>
+        </td>
+    `;
+    table.appendChild(newRow);
+}
+
+function saveRow(button) {
+    const row = button.closest("tr");
+    button.textContent = "Edit";
+    button.classList.remove("btn-success");
+    button.classList.add("btn-warning");
+    button.setAttribute("onclick", "editRow(this)");
+}
+
+function editRow(button) {
+    const row = button.closest("tr");
+    row.querySelectorAll("td[contenteditable]").forEach(cell => cell.setAttribute("contenteditable", "true"));
+    button.textContent = "Save";
+    button.classList.remove("btn-warning");
+    button.classList.add("btn-success");
+    button.setAttribute("onclick", "saveRow(this)");
+}
+
+function deleteRow(button) {
+    button.closest("tr").remove();
+}
+</script>
+
+            <!-- Enhanced Timesheet Processing Tab -->
+            <div id="tab-timesheets" class="tab-content">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1>Timesheet Processing</h1>
+                            <p class="card-description">Review and approve employee timesheets</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="approveAllTimesheets()">
+                            <span class="icon">✅</span>
+                            <span class="ml-2">Approve All</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="card-title">Pending Timesheets</h3>
+                                <p class="card-description">12 timesheets awaiting approval</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-ghost">
+                                    <span class="icon">🔍</span>
+                                    <span class="ml-2">Filter</span>
+                                </button>
+                                <button class="btn btn-ghost">
+                                    <span class="icon">📤</span>
+                                    <span class="ml-2">Export</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Period</th>
+                                    <th>Total Hours</th>
+                                    <th>Regular</th>
+                                    <th>Overtime</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timesheetTable">
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>Christel Arpon</strong>
+                                            <div class="card-description">Electrical Engineer</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 16-22, 2024</td>
+                                    <td>42.5h</td>
+                                    <td>40.0h</td>
+                                    <td>2.5h</td>
+                                    <td><span class="badge badge-secondary timesheet-status">Pending</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost approve-btn" onclick="approveTimesheet(this)">
+                                            <span class="icon">✅</span> Approve
+                                        </button>
+                                        <button class="btn btn-ghost" onclick="showNotification('Timesheet details view', 'info')">
+                                            <span class="icon">👁️</span> View
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>Janico Castillo</strong>
+                                            <div class="card-description">Fire Protection Engineer</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 16-22, 2024</td>
+                                    <td>45.0h</td>
+                                    <td>40.0h</td>
+                                    <td>5.0h</td>
+                                    <td><span class="badge badge-secondary timesheet-status">Pending</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost approve-btn" onclick="approveTimesheet(this)">
+                                            <span class="icon">✅</span> Approve
+                                        </button>
+                                        <button class="btn btn-ghost" onclick="showNotification('Timesheet details view', 'info')">
+                                            <span class="icon">👁️</span> View
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>Angelica Villarisco</strong>
+                                            <div class="card-description">Mechanical Engineer</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 16-22, 2024</td>
+                                    <td>38.5h</td>
+                                    <td>38.5h</td>
+                                    <td>0.0h</td>
+                                    <td><span class="badge badge-success">Approved</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost" onclick="showNotification('Timesheet details view', 'info')">
+                                            <span class="icon">👁️</span> View
+                                        </button>
+                                        <button class="btn btn-ghost" onclick="showNotification('Export timesheet', 'info')">
+                                            <span class="icon">📄</span> Export
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>Lealene Fajardo</strong>
+                                            <div class="card-description">Plumbing Specialist</div>
+                                        </div>
+                                    </td>
+                                    <td>Dec 16-22, 2024</td>
+                                    <td>40.0h</td>
+                                    <td>40.0h</td>
+                                    <td>0.0h</td>
+                                    <td><span class="badge badge-secondary timesheet-status">Pending</span></td>
+                                    <td>
+                                        <button class="btn btn-ghost approve-btn" onclick="approveTimesheet(this)">
+                                            <span class="icon">✅</span> Approve
+                                        </button>
+                                        <button class="btn btn-ghost" onclick="showNotification('Timesheet details view', 'info')">
+                                            <span class="icon">👁️</span> View
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Payroll Processing Tab -->
+            <div id="tab-payroll" class="tab-content">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1>Payroll Processing</h1>
+                            <p class="card-description">Bi-weekly payroll with Philippine statutory deductions</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="processPayroll()">
+                            <span class="icon">💰</span>
+                            <span class="ml-2">Process Payroll</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 1fr 1fr;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Current Payroll Period</h3>
+                            <p class="card-description">December 16-29, 2024</p>
+                        </div>
+                        <div class="card-content">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Gross Pay</th>
+                                        <th>Deductions</th>
+                                        <th>Net Pay</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Christel Arpon</strong>
+                                                <div class="card-description">⚡ Electrical</div>
+                                            </div>
+                                        </td>
+                                        <td>₱97,248</td>
+                                        <td>₱19,450</td>
+                                        <td><strong>₱77,798</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Janico Castillo</strong>
+                                                <div class="card-description">🛡️ Fire Protection</div>
+                                            </div>
+                                        </td>
+                                        <td>₱90,855</td>
+                                        <td>₱18,171</td>
+                                        <td><strong>₱72,684</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Angelica Villarisco</strong>
+                                                <div class="card-description">🔧 Mechanical</div>
+                                            </div>
+                                        </td>
+                                        <td>₱82,929</td>
+                                        <td>₱16,586</td>
+                                        <td><strong>₱66,343</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>Lealene Fajardo</strong>
+                                                <div class="card-description">💧 Plumbing</div>
+                                            </div>
+                                        </td>
+                                        <td>₱77,520</td>
+                                        <td>₱15,504</td>
+                                        <td><strong>₱62,016</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Philippine Statutory Deductions</h3>
+                            <p class="card-description">Labor law compliance breakdown</p>
+                        </div>
+                        <div class="card-content space-y-4">
+                            <div>
+                                <div class="flex justify-between">
+                                    <span>SSS Contributions</span>
+                                    <span>₱24,864</span>
+                                </div>
+                                <p class="card-description">Social Security System</p>
+                                <div class="progress mt-2">
+                                    <div class="progress-fill" style="width: 36%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between">
+                                    <span>PhilHealth Contributions</span>
+                                    <span>₱10,427</span>
+                                </div>
+                                <p class="card-description">Philippine Health Insurance</p>
+                                <div class="progress mt-2">
+                                    <div class="progress-fill" style="width: 15%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between">
+                                    <span>Pag-IBIG Contributions</span>
+                                    <span>₱6,951</span>
+                                </div>
+                                <p class="card-description">Home Development Mutual Fund</p>
+                                <div class="progress mt-2">
+                                    <div class="progress-fill" style="width: 10%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between">
+                                    <span>Withholding Tax</span>
+                                    <span>₱27,269</span>
+                                </div>
+                                <p class="card-description">Bureau of Internal Revenue</p>
+                                <div class="progress mt-2">
+                                    <div class="progress-fill" style="width: 39%"></div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div>
+                                <div class="flex justify-between">
+                                    <strong>Total Deductions</strong>
+                                    <strong>₱69,516</strong>
+                                </div>
+                                <div class="progress mt-2">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Payroll Summary -->
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">Payroll Summary - Bi-weekly Period</h3>
+                        <p class="card-description">Complete financial breakdown for research team</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="grid grid-cols-1 gap-4" style="grid-template-columns: repeat(4, 1fr);">
+                            <div class="text-center feature-highlight">
+                                <div class="stat-value">₱347,580</div>
+                                <p class="card-description">Total Gross Pay</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-success">+5.2%</span>
+                                </div>
+                            </div>
+                            <div class="text-center feature-highlight">
+                                <div class="stat-value">₱69,516</div>
+                                <p class="card-description">Total Deductions</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-secondary">20.0%</span>
+                                </div>
+                            </div>
+                            <div class="text-center feature-highlight">
+                                <div class="stat-value">₱278,064</div>
+                                <p class="card-description">Total Net Pay</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-success">80.0%</span>
+                                </div>
+                            </div>
+                            <div class="text-center feature-highlight">
+                                <div class="stat-value">4</div>
+                                <p class="card-description">Team Members</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-default">100%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Reports & Security Tab -->
+            <div id="tab-reports" class="tab-content">
+                <div class="mb-6">
+                    <h1>Reports & Security</h1>
+                    <p class="card-description">Comprehensive reporting and security monitoring</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab-list">
+                        <button class="tab-trigger active" data-subtab="reports">Reports</button>
+                        <button class="tab-trigger" data-subtab="security">Security</button>
+                        <button class="tab-trigger" data-subtab="analytics">Analytics</button>
+                    </div>
+
+                    <div id="subtab-reports" class="tab-content active">
+                        <div class="grid grid-cols-1 gap-4" style="grid-template-columns: repeat(3, 1fr);">
+                            <div class="card">
+                                <div class="card-content text-center">
+                                    <div class="icon icon-xl mb-4">📊</div>
+                                    <h4>Payroll Report</h4>
+                                    <p class="card-description">Detailed payroll breakdown and analysis</p>
+                                    <button class="btn btn-primary mt-4 w-full" onclick="generateReport('payroll')">Generate Report</button>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-content text-center">
+                                    <div class="icon icon-xl mb-4">⏰</div>
+                                    <h4>Attendance Report</h4>
+                                    <p class="card-description">Attendance patterns and trends analysis</p>
+                                    <button class="btn btn-primary mt-4 w-full" onclick="generateReport('attendance')">Generate Report</button>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-content text-center">
+                                    <div class="icon icon-xl mb-4">📋</div>
+                                    <h4>Compliance Report</h4>
+                                    <p class="card-description">Labor law compliance status verification</p>
+                                    <button class="btn btn-primary mt-4 w-full" onclick="generateReport('compliance')">Generate Report</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subtab-security" class="tab-content">
+                        <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 1fr 1fr;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Security Events</h3>
+                                    <p class="card-description">Real-time security monitoring</p>
+                                </div>
+                                <div class="card-content">
+                                    <div class="space-y-1" id="securityEvents">
+                                        <div class="activity-item activity-success">
+                                            <span class="badge badge-success">✅</span>
+                                            <div>
+                                                <p>Successful login - Admin</p>
+                                                <p class="card-description" id="lastLoginTime">2 minutes ago</p>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item activity-success">
+                                            <span class="badge badge-success">🔐</span>
+                                            <div>
+                                                <p>RFID verification successful</p>
+                                                <p class="card-description">RC001 - Christel Arpon - 5 minutes ago</p>
+                                            </div>
+                                        </div>
+                                        <div class="activity-item activity-success">
+                                            <span class="badge badge-success">👁️</span>
+                                            <div>
+                                                <p>Face recognition verified</p>
+                                                <p class="card-description">Biometric match 94% - 5 minutes ago</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">System Status</h3>
+                                    <p class="card-description">Infrastructure health monitoring</p>
+                                </div>
+                                <div class="card-content space-y-4">
+                                    <div class="system-status status-operational">
+                                        <div class="flex items-center gap-2">
+                                            <span class="icon">🗄️</span>
+                                            <span>Database</span>
+                                        </div>
+                                        <span class="badge badge-success">Online</span>
+                                    </div>
+                                    <div class="system-status status-operational">
+                                        <div class="flex items-center gap-2">
+                                            <span class="icon">📱</span>
+                                            <span>RFID Scanner</span>
+                                        </div>
+                                        <span class="badge badge-success">Connected</span>
+                                    </div>
+                                    <div class="system-status status-operational">
+                                        <div class="flex items-center gap-2">
+                                            <span class="icon">👁️</span>
+                                            <span>Face Recognition</span>
+                                        </div>
+                                        <span class="badge badge-success">Active</span>
+                                    </div>
+                                    <div class="system-status status-operational">
+                                        <div class="flex items-center gap-2">
+                                            <span class="icon">🔒</span>
+                                            <span>Security Module</span>
+                                        </div>
+                                        <span class="badge badge-success">Protected</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subtab-analytics" class="tab-content">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Usage Analytics</h3>
+                                <p class="card-description">System performance and usage statistics</p>
+                            </div>
+                            <div class="card-content">
+                                <div class="grid grid-cols-1 gap-4" style="grid-template-columns: repeat(4, 1fr);">
+                                    <div class="text-center feature-highlight">
+                                        <div class="stat-value">2,847</div>
+                                        <p class="card-description">Total Clock-ins</p>
+                                        <div class="mt-2">
+                                            <span class="badge badge-success">+12%</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center feature-highlight">
+                                        <div class="stat-value">96%</div>
+                                        <p class="card-description">Success Rate</p>
+                                        <div class="mt-2">
+                                            <span class="badge badge-success">+2%</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center feature-highlight">
+                                        <div class="stat-value">4.2s</div>
+                                        <p class="card-description">Avg Verification Time</p>
+                                        <div class="mt-2">
+                                            <span class="badge badge-success">-0.3s</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-center feature-highlight">
+                                        <div class="stat-value">0</div>
+                                        <p class="card-description">Security Violations</p>
+                                        <div class="mt-2">
+                                            <span class="badge badge-success">Perfect</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Payroll Forecasting Tab -->
+            <div id="tab-forecasting" class="tab-content">
+                <div class="mb-6">
+                    <h1>Payroll Forecasting</h1>
+                    <p class="card-description">Predictive analytics and budget planning for research project</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 2fr 1fr;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">6-Month Payroll Forecast</h3>
+                            <p class="card-description">Based on current trends and project timeline</p>
+                        </div>
+                        <div class="card-content">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Projected Gross</th>
+                                        <th>Deductions</th>
+                                        <th>Net Payroll</th>
+                                        <th>Variance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Jan 2025</strong></td>
+                                        <td>₱695,160</td>
+                                        <td>₱139,032</td>
+                                        <td>₱556,128</td>
+                                        <td><span class="badge badge-success">+2.5%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Feb 2025</strong></td>
+                                        <td>₱723,166</td>
+                                        <td>₱144,633</td>
+                                        <td>₱578,533</td>
+                                        <td><span class="badge badge-success">+4.0%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Mar 2025</strong></td>
+                                        <td>₱751,172</td>
+                                        <td>₱150,234</td>
+                                        <td>₱600,938</td>
+                                        <td><span class="badge badge-success">+3.9%</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Apr 2025</strong></td>
+                                        <td>₱779,178</td>
+                                        <td>₱155,836</td>
+                                        <td>₱623,342</td>
+                                        <td><span class="badge badge-success">+3.7%</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Budget Analysis</h3>
+                            </div>
+                            <div class="card-content space-y-4">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span>Budget Utilization</span>
+                                        <span>73%</span>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-fill" style="width: 73%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p><strong>Remaining Budget:</strong></p>
+                                    <p class="stat-value">₱1,847,200</p>
+                                    <p class="card-description">Available for next 6 months</p>
+                                </div>
+                                <div>
+                                    <p><strong>Projected Status:</strong></p>
+                                    <p class="card-description">Within budget constraints</p>
+                                    <span class="badge badge-success">On Track</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Cost Drivers</h3>
+                            </div>
+                            <div class="card-content space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Overtime Hours</span>
+                                    <div>
+                                        <span>15%</span>
+                                        <span class="badge badge-warning ml-2">High</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Statutory Increases</span>
+                                    <div>
+                                        <span>8%</span>
+                                        <span class="badge badge-secondary ml-2">Normal</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Project Scope</span>
+                                    <div>
+                                        <span>5%</span>
+                                        <span class="badge badge-success ml-2">Low</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Skill Premium</span>
+                                    <div>
+                                        <span>12%</span>
+                                        <span class="badge badge-default ml-2">MEPFS</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Research Compliance Tab -->
+            <div id="tab-research" class="tab-content">
+                <div class="mb-6">
+                    <h1>Research Compliance</h1>
+                    <p class="card-description">Academic research standards and KDD methodology compliance</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 1fr 1fr;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">ISO/IEC 25010:2015 Quality Standards</h3>
+                            <p class="card-description">Software quality assessment metrics</p>
+                        </div>
+                        <div class="card-content space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Functional Suitability</span>
+                                    <span>94%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-fill" style="width: 94%"></div>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--muted-foreground); margin-top: 0.25rem;">
+                                    Completeness, correctness, appropriateness
+                                </p>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Performance Efficiency</span>
+                                    <span>89%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-fill" style="width: 89%"></div>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--muted-foreground); margin-top: 0.25rem;">
+                                    Time behavior, resource utilization
+                                </p>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Reliability</span>
+                                    <span>96%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-fill" style="width: 96%"></div>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--muted-foreground); margin-top: 0.25rem;">
+                                    Maturity, availability, fault tolerance
+                                </p>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span>Security</span>
+                                    <span>98%</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-fill" style="width: 98%"></div>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--muted-foreground); margin-top: 0.25rem;">
+                                    Confidentiality, integrity, authentication
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">KDD Process - Research Data Collection</h3>
+                            <p class="card-description">Knowledge Discovery in Databases methodology</p>
+                        </div>
+                        <div class="card-content space-y-4">
+                            <div>
+                                <strong>KDD Process Stages:</strong>
+                                <div class="mt-2 space-y-2">
+                                    <div class="flex justify-between">
+                                        <span>Data Selection</span>
+                                        <span class="badge badge-success">Complete ✓</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Data Preprocessing</span>
+                                        <span class="badge badge-success">Complete ✓</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Data Mining</span>
+                                        <span class="badge badge-warning">In Progress ⚡</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Pattern Evaluation</span>
+                                        <span class="badge badge-secondary">Pending 📝</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span>Knowledge Presentation</span>
+                                        <span class="badge badge-secondary">Pending 📋</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div>
+                                <strong>Research Metrics Collected:</strong>
+                                <div class="mt-2 space-y-1 text-sm">
+                                    <p>• 2,847 attendance records analyzed</p>
+                                    <p>• 98% RFID verification accuracy</p>
+                                    <p>• 94% face recognition precision</p>
+                                    <p>• 0% fraud detection incidents</p>
+                                    <p>• 100% Philippine labor law compliance</p>
+                                    <p>• 96% overall system reliability</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">Richwell Colleges - Capstone Research Team</h3>
+                        <p class="card-description">MEPFS PayrollPro research participants and contributors</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="grid grid-cols-1 gap-6" style="grid-template-columns: repeat(2, 1fr);">
+                            <div>
+                                <h4>Research Team Members:</h4>
+                                <div class="space-y-2 mt-2">
+                                    <div class="feature-highlight">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <span class="badge badge-destructive">Lead</span>
+                                                <div>
+                                                    <strong>Christel Arpon</strong>
+                                                    <div class="card-description">Electrical Systems Specialist</div>
+                                                </div>
+                                            </div>
+                                            <span class="icon">⚡</span>
+                                        </div>
+                                    </div>
+                                    <div class="feature-highlight">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <span class="badge badge-secondary">Member</span>
+                                                <div>
+                                                    <strong>Janico Castillo</strong>
+                                                    <div class="card-description">Fire Protection Engineer</div>
+                                                </div>
+                                            </div>
+                                            <span class="icon">🛡️</span>
+                                        </div>
+                                    </div>
+                                    <div class="feature-highlight">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <span class="badge badge-secondary">Member</span>
+                                                <div>
+                                                    <strong>Angelica Villarisco</strong>
+                                                    <div class="card-description">Mechanical Engineer</div>
+                                                </div>
+                                            </div>
+                                            <span class="icon">🔧</span>
+                                        </div>
+                                    </div>
+                                    <div class="feature-highlight">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <span class="badge badge-secondary">Member</span>
+                                                <div>
+                                                    <strong>Lealene Fajardo</strong>
+                                                    <div class="card-description">Plumbing Systems Specialist</div>
+                                                </div>
+                                            </div>
+                                            <span class="icon">💧</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4>Research Objectives Status:</h4>
+                                <div class="space-y-2 mt-2">
+                                    <div class="flex justify-between feature-highlight">
+                                        <span>Eliminate buddy punching</span>
+                                        <span class="badge badge-success">✓ Achieved</span>
+                                    </div>
+                                    <div class="flex justify-between feature-highlight">
+                                        <span>Improve payroll accuracy</span>
+                                        <span class="badge badge-success">✓ Achieved</span>
+                                    </div>
+                                    <div class="flex justify-between feature-highlight">
+                                        <span>RFID integration</span>
+                                        <span class="badge badge-success">✓ Complete</span>
+                                    </div>
+                                    <div class="flex justify-between feature-highlight">
+                                        <span>Biometric verification</span>
+                                        <span class="badge badge-success">✓ Complete</span>
+                                    </div>
+                                    <div class="flex justify-between feature-highlight">
+                                        <span>Philippine law compliance</span>
+                                        <span class="badge badge-success">✓ Complete</span>
+                                    </div>
+                                    <div class="flex justify-between feature-highlight">
+                                        <span>Research documentation</span>
+                                        <span class="badge badge-warning">⚡ In Progress</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Methodology Card -->
+                <div class="card mt-6">
+                    <div class="card-header">
+                        <h3 class="card-title">Research Methodology & Findings</h3>
+                        <p class="card-description">Academic framework and scientific approach</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="grid grid-cols-1 gap-4" style="grid-template-columns: repeat(3, 1fr);">
+                            <div class="feature-highlight text-center">
+                                <h4>📊 Data Collection</h4>
+                                <p class="card-description">Systematic gathering of attendance, payroll, and verification data</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-success">2,847 records</span>
+                                </div>
+                            </div>
+                            <div class="feature-highlight text-center">
+                                <h4>🔍 Analysis Method</h4>
+                                <p class="card-description">Statistical analysis using KDD methodology for pattern recognition</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-warning">Processing</span>
+                                </div>
+                            </div>
+                            <div class="feature-highlight text-center">
+                                <h4>📋 Documentation</h4>
+                                <p class="card-description">Comprehensive research documentation and compliance reporting</p>
+                                <div class="mt-2">
+                                    <span class="badge badge-default">ISO Compliant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // ----------------- State & Variables -----------------
+    let currentTab = 'dashboard';
+    let currentSubtab = 'reports';
+    let systemStartTime = new Date();
+
+    // ----------------- Tab Navigation -----------------
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+        const selectedTab = document.getElementById(`tab-${tabName}`);
+        if (selectedTab) selectedTab.classList.add('active');
+
+        const selectedNavItem = document.querySelector(`[data-tab="${tabName}"]`);
+        if (selectedNavItem) selectedNavItem.classList.add('active');
+
+        currentTab = tabName;
+        showNotification(`Switched to ${tabName} module`, 'info');
+    }
+
+    // ----------------- Subtab Navigation -----------------
+    function switchSubtab(subtabName) {
+        document.querySelectorAll('[id^="subtab-"]').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('[data-subtab]').forEach(trigger => trigger.classList.remove('active'));
+
+        const selectedSubtab = document.getElementById(`subtab-${subtabName}`);
+        if (selectedSubtab) selectedSubtab.classList.add('active');
+
+        const selectedTrigger = document.querySelector(`[data-subtab="${subtabName}"]`);
+        if (selectedTrigger) selectedTrigger.classList.add('active');
+
+        currentSubtab = subtabName;
+    }
+
+    // ----------------- Real-time Updates -----------------
+    function updateRealTimeData() {
+        const now = new Date();
+        const timeElements = document.querySelectorAll('#currentTime, #dashboardTime');
+        timeElements.forEach(el => { if (el) el.textContent = now.toLocaleTimeString(); });
+
+        const lastSyncElement = document.getElementById('lastSync');
+        if (lastSyncElement) {
+            const lastSyncMinutes = Math.floor((now - systemStartTime) / 60000);
+            lastSyncElement.textContent = `${lastSyncMinutes} min ago`;
+        }
+    }
+    setInterval(updateRealTimeData, 1000);
+
+    // ----------------- RFID Scan Simulation -----------------
+    function simulateRFIDScan() {
+        const verificationPanel = document.getElementById('verificationPanel');
+        const scanBtn = document.getElementById('scanRFID');
+
+        verificationPanel.classList.add('scanning-active');
+        verificationPanel.innerHTML = `
+            <div class="text-center">
+                <div class="loading-spinner" style="margin: 0 auto 1rem; width: 3rem; height: 3rem; border: 3px solid var(--info); border-top: 3px solid transparent;"></div>
+                <h4>Scanning RFID Card...</h4>
+                <p class="card-description">Please hold card near scanner</p>
+            </div>
+        `;
+        scanBtn.disabled = true;
+        scanBtn.textContent = 'Scanning...';
+
+        setTimeout(() => {
+            verificationPanel.classList.remove('scanning-active');
+            verificationPanel.innerHTML = `
+                <div class="text-center">
+                    <div class="icon icon-xl mb-4" style="color: var(--success);">✅</div>
+                    <h4>RFID Verified Successfully</h4>
+                    <p class="card-description">RC001 - Christel Arpon</p>
+                    <div class="mt-4">
+                        <span class="badge badge-success">RFID Success</span>
+                        <span class="badge badge-success ml-2">Face Recognition: 94%</span>
+                    </div>
+                </div>
+            `;
+            scanBtn.disabled = false;
+            scanBtn.innerHTML = '<span class="icon">📱</span><span class="ml-2">Scan RFID</span>';
+            showNotification('RFID scan successful - Welcome Christel!', 'success');
+        }, 2000);
+    }
+
+    // ----------------- Timesheet Functions -----------------
+    function approveTimesheet(button) {
+        const row = button.closest('tr');
+        const statusBadge = row.querySelector('.timesheet-status');
+        const actionCell = row.querySelector('td:last-child');
+
+        statusBadge.className = 'badge badge-success';
+        statusBadge.textContent = 'Approved';
+
+        actionCell.innerHTML = `
+            <button class="btn btn-ghost" onclick="showNotification('Timesheet details view', 'info')">
+                <span class="icon">👁️</span> View
+            </button>
+            <button class="btn btn-ghost" onclick="showNotification('Export timesheet', 'info')">
+                <span class="icon">📄</span> Export
+            </button>
+        `;
+        showNotification('Timesheet approved successfully', 'success');
+    }
+
+    function approveAllTimesheets() {
+        const pendingButtons = document.querySelectorAll('.approve-btn');
+        let count = 0;
+        pendingButtons.forEach(button => {
+            setTimeout(() => { approveTimesheet(button); count++; }, count * 300);
+        });
+        setTimeout(() => { showNotification(`All ${count} timesheets approved successfully`, 'success'); }, count * 300 + 500);
+    }
+
+    // ----------------- Payroll & Reports -----------------
+    function processPayroll() {
+        showNotification('Processing payroll...', 'info');
+        setTimeout(() => showNotification('Payroll processed successfully! ₱278,064 net distributed.', 'success'), 2000);
+    }
+
+    function generateReport(type) {
+        const reportNames = {
+            'payroll': 'Payroll Analysis Report',
+            'attendance': 'Attendance Patterns Report',
+            'compliance': 'Philippine Labor Law Compliance Report'
+        };
+        showNotification(`Generating ${reportNames[type]}...`, 'info');
+        setTimeout(() => showNotification(`${reportNames[type]} generated successfully!`, 'success'), 1500);
+    }
+
+    // ----------------- Notifications -----------------
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => { notification.style.transform = 'translateX(100%)'; setTimeout(() => notification.remove(), 300); }, 3000);
+    }
+
+    // ----------------- Event Listeners -----------------
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => switchTab(item.getAttribute('data-tab')));
+        });
+
+        // Subtab navigation
+        document.querySelectorAll('[data-subtab]').forEach(trigger => {
+            trigger.addEventListener('click', () => switchSubtab(trigger.getAttribute('data-subtab')));
+        });
+
+        // RFID scan button
+        const scanBtn = document.getElementById('scanRFID');
+        if (scanBtn) scanBtn.addEventListener('click', simulateRFIDScan);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey) {
+                switch(e.key) {
+                    case '1': switchTab('dashboard'); break;
+                    case '2': switchTab('employees'); break;
+                    case '3': switchTab('attendance'); break;
+                    case '4': switchTab('payroll'); break;
+                    case '5': switchTab('reports'); break;
+                    case '6': switchTab('research'); break;
+                }
+            }
+        });
+    });
+
+    // ----------------- Currency Formatting -----------------
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(amount);
+    }
+
+    function formatCurrencyCompact(amount) {
+        if (amount >= 1000000) return '₱' + (amount / 1000000).toFixed(1) + 'M';
+        if (amount >= 1000) return '₱' + (amount / 1000).toFixed(0) + 'K';
+        return '₱' + amount.toLocaleString();
+    }
+
+    console.log('🏗️ Dashboard JS loaded - Django authentication ready');
+</script>
+
+
+</body>
+</html>
