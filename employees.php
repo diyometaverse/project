@@ -1,15 +1,8 @@
-<?php
-include 'db.php';
-
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-
-?>
-
+<link rel="stylesheet" href="styles.css">
 <style>
+  body {
+    padding: 30px;
+  }
 
   #recentScans {
   max-height: 200px;
@@ -103,7 +96,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 </style>
 
-<div id="tab-attendance" class="tab-content">
+<div id="tab-attendance">
     <div class="mb-6">
         <h1>Attendance Management</h1>
         <p class="card-description">RFID + Biometric Face Verification System</p>
@@ -150,7 +143,6 @@ if (!isset($_SESSION['user_id'])) {
                             </td>
                             <td><span class="badge badge-success">Present</span></td>
                         </tr>
-                        <button id="refreshAttendance" onclick="refreshAttendance()">Refresh Attendance</button>
                     </tbody>
                 </table>
             </div>
@@ -209,12 +201,11 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
     </div>
-    <div id="rfidResultPanel" class="mt-2 text-center"></div>
+</div>
+<div id="rfidResultPanel" class="mt-2 text-center"></div>
 <div id="cameraContainer" style="display:none; margin-top:15px; text-align:center;">
     <video id="liveCamera" autoplay playsinline style="width:100%; max-width:400px;"></video>
 </div>
-</div>
-
 <script async src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
 // --- GLOBAL FUNCTIONS (needed for onclick buttons) ---
@@ -296,12 +287,7 @@ function startCountdown() {
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-    loadLiveAttendance(); // Initial load
-});
-
 document.addEventListener("DOMContentLoaded", async () => {
-    loadLiveAttendance(true);
     // --- DYNAMIC FACE-API.JS LOADING ---
     if (!window.faceapi) {
         await new Promise((resolve, reject) => {
@@ -373,65 +359,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // --- LIVE ATTENDANCE ---
-    function loadLiveAttendance(forceUpdate = false) {
-        const storedData = JSON.parse(localStorage.getItem('attendanceData') || '{}');
-        const lastUpdated = storedData.lastUpdated ? new Date(storedData.lastUpdated) : null;
-
-        if (forceUpdate || !lastUpdated || (new Date() - lastUpdated) > 5 * 60 * 1000) {
-            fetch('get_attendance.php')
-                .then(res => res.json())
-                .then(data => {
-                    data.lastUpdated = new Date();
-                    localStorage.setItem('attendanceData', JSON.stringify(data));
-                    populateAttendanceTable(data);
-                });
-        } else {
-            populateAttendanceTable(storedData);
-        }
-    }
-
-    setInterval(() => { loadLiveAttendance(true); }, 60000);
-
-    // Manual Refresh Function
-    window.refreshAttendance = function() {
-        loadLiveAttendance(true); // Force update from server
-        showNotification('Attendance data refreshed!', 'success');
-    }
-
-    function populateAttendanceTable(data) {
-        const table = document.getElementById('liveAttendanceTable');
-        const recent = document.getElementById('recentScans');
-        table.innerHTML = '';
-        recent.innerHTML = '';
-        let recentEntries = [];
-        data.forEach(row => {
-            const timeIn = formatTime(row.time_in);
-            const timeOut = formatTime(row.time_out);
-            let hours = '-';
-            if (row.time_in && row.time_out) {
-                const inTime = new Date(`1970-01-01T${row.time_in}`);
-                const outTime = new Date(`1970-01-01T${row.time_out}`);
-                hours = ((outTime - inTime) / (1000 * 60 * 60)).toFixed(2) + 'h';
-            }
-            const status = row.time_in ? 'Present' : '-';
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${row.employee_name}</strong></td>
-                <td>${timeIn}</td>
-                <td>${timeOut}</td>
-                <td>${hours}</td>
-                <td><span class="badge badge-success">Manual</span></td>
-                <td><span class="badge badge-success">${status}</span></td>
-            `;
-            table.appendChild(tr);
-            if (row.time_in) recentEntries.push(`${timeIn} - ${row.employee_name} (IN)`);
-            if (row.time_out) recentEntries.push(`${timeOut} - ${row.employee_name} (OUT)`);
-        });
-        recentEntries.sort((a, b) => b.localeCompare(a));
-        recentEntries.slice(0, 10).forEach(entry => {
-            const div = document.createElement('div');
-            div.innerText = entry;
-            recent.appendChild(div);
+    function loadLiveAttendance() {
+        fetch('get_attendance.php')
+        .then(res => res.json())
+        .then(data => {
+            const table = document.getElementById('liveAttendanceTable');
+            const recent = document.getElementById('recentScans');
+            table.innerHTML = '';
+            recent.innerHTML = '';
+            let recentEntries = [];
+            data.forEach(row => {
+                const timeIn = formatTime(row.time_in);
+                const timeOut = formatTime(row.time_out);
+                let hours = '-';
+                if (row.time_in && row.time_out) {
+                    const inTime = new Date(`1970-01-01T${row.time_in}`);
+                    const outTime = new Date(`1970-01-01T${row.time_out}`);
+                    hours = ((outTime - inTime)/(1000*60*60)).toFixed(2)+'h';
+                }
+                const status = row.time_in ? 'Present' : '-';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${row.employee_name}</strong></td>
+                    <td>${timeIn}</td>
+                    <td>${timeOut}</td>
+                    <td>${hours}</td>
+                    <td><span class="badge badge-success">Manual</span></td>
+                    <td><span class="badge badge-success">${status}</span></td>
+                `;
+                table.appendChild(tr);
+                if(row.time_in) recentEntries.push(`${timeIn} - ${row.employee_name} (IN)`);
+                if(row.time_out) recentEntries.push(`${timeOut} - ${row.employee_name} (OUT)`);
+            });
+            recentEntries.sort((a,b) => b.localeCompare(a));
+            recentEntries.slice(0,10).forEach(entry => {
+                const div = document.createElement('div');
+                div.innerText = entry;
+                recent.appendChild(div);
+            });
         });
     }
 
@@ -464,12 +429,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function refreshDashboard() {
-        const data = JSON.parse(localStorage.getItem('attendanceData') || '[]');
-        updateStats(data);
-        updateSecurityAlerts(data);
+        fetch('get_attendance.php')
+        .then(res => res.json())
+        .then(data => {
+            updateStats(data);
+            updateSecurityAlerts(data);
+        })
+        .catch(err => console.error(err));
     }
 
-    setInterval(refreshDashboard, 500);
+    refreshDashboard();
+    setInterval(refreshDashboard, 1000);
 
     // --- RFID BUFFER ---
     let rfidBuffer = '';
@@ -625,6 +595,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener('error', (e) => console.error("Global Error:", e.error));
     window.addEventListener('unhandledrejection', (e) => console.error("Unhandled Promise:", e.reason));
 
-    await startCameraTest();
+    await startCameraTest(); // Automatically start the camera
 });
 </script>
