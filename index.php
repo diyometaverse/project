@@ -608,6 +608,7 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
+    // Correctly activate the selected tab
     const selectedTab = document.getElementById(`tab-${tabName}`);
     if (selectedTab) selectedTab.classList.add('active');
 
@@ -615,11 +616,6 @@ function switchTab(tabName) {
     if (selectedNavItem) selectedNavItem.classList.add('active');
 
     currentTab = tabName;
-
-    // 👇 Auto-select first subtab if the tab has one
-    if (tabName === 'reports') {
-        switchSubtab('reports');  // auto show reports subtab
-    }
 }
 
     // ----------------- Subtab Navigation -----------------
