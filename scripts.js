@@ -338,9 +338,9 @@ document.addEventListener("DOMContentLoaded", function () {
     loginForm.addEventListener("submit", function (e) {
       e.preventDefault();
       // In a real Django app, this form would submit to the server.
-      // The JS `login()` function is a placeholder for the prototype.
-      // For a real form submission, you would remove the `e.preventDefault()`
-      // and the call to `login()`, and let the form submit normally.
+      // The JS login() function is a placeholder for the prototype.
+      // For a real form submission, you would remove the e.preventDefault()
+      // and the call to login(), and let the form submit normally.
       login();
     });
   }
@@ -436,6 +436,75 @@ function formatCurrencyCompact(amount) {
     return "₱" + (amount / 1000).toFixed(0) + "K";
   }
   return "₱" + amount.toLocaleString();
+}
+function clockIn(empId) {
+  fetch("attendance_mark.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      employee_id: empId,
+      action: "time_in",
+      date: "<?= $today ?>",
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success) {
+        document.getElementById("timein-" + empId).textContent = data.time_in;
+        document.getElementById("status-" + empId).textContent = "Present";
+        loadLiveAttendance();
+      } else alert(data.message);
+    });
+}
+
+function clockOut(empId) {
+  fetch("attendance_mark.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      employee_id: empId,
+      action: "time_out",
+      date: "<?= $today ?>",
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success)
+        document.getElementById("timeout-" + empId).textContent = data.time_out;
+      else alert(data.message);
+      loadLiveAttendance();
+    });
+}
+
+function submitManual() {
+  const employeeId = document.getElementById("employee_id").value;
+  if (!employeeId) return alert("Enter Employee ID");
+  fetch("record_attendance.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `employee_id=${employeeId}`,
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.status === "success") {
+        document.getElementById("manualResult").innerText = `${
+          data.employee_name
+        } Time ${data.type.toUpperCase()} recorded`;
+        loadLiveAttendance();
+      } else alert(data.message);
+    });
+}
+
+function verifyFace(empId) {
+  // Show camera container
+  const container = document.getElementById("cameraContainer");
+  container.style.display = "block";
+  const video = document.getElementById("liveCamera");
+  navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+    video.srcObject = stream;
+    video.play();
+  });
+  // Countdown + capture + send to record_attendance_face.php can be integrated here
 }
 
 // System initialization

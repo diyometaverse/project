@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION['role'] = $user['role'];
 
             if ($user['role'] === 'admin' || $user['role'] === 'hr') {
-                header("Location: index.php");
+                header("Location: admin.php");
                 exit;
             } else {
                 $_SESSION['toast_message'] = 'Access restricted to admin and HR only.';

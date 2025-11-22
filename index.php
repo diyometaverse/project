@@ -1,746 +1,1070 @@
-<?php
-require_once "db.php"; 
-session_start();
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-?>
-<?php if(isset($_GET['success'])): ?>
-<script>
-alert('Employee added successfully!');
-</script>
-<?php endif; ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEPFS PayrollPro - Comprehensive Payroll Management System</title>
-    <style>
-        /* CSS Variables from globals.css */
+    <title>Attendance Management System</title>
+<style>
+        /* ============ DESIGN TOKENS ============ */
         :root {
-            --font-size: 14px;
-            --background: #ffffff;
-            --foreground: oklch(0.145 0 0);
-            --card: #ffffff;
-            --card-foreground: oklch(0.145 0 0);
-            --popover: oklch(1 0 0);
-            --popover-foreground: oklch(0.145 0 0);
-            --primary: #030213;
-            --primary-foreground: oklch(1 0 0);
-            --secondary: oklch(0.95 0.0058 264.53);
-            --secondary-foreground: #030213;
-            --muted: #ececf0;
-            --muted-foreground: #717182;
-            --accent: #e9ebef;
-            --accent-foreground: #030213;
-            --destructive: #d4183d;
-            --destructive-foreground: #ffffff;
-            --border: rgba(0, 0, 0, 0.1);
-            --input: transparent;
-            --input-background: #f3f3f5;
-            --switch-background: #cbced4;
-            --font-weight-medium: 500;
-            --font-weight-normal: 400;
-            --ring: oklch(0.708 0 0);
-            --radius: 0.625rem;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --info: #3b82f6;
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --neutral-50: #f9fafb;
+            --neutral-100: #f3f4f6;
+            --neutral-200: #e5e7eb;
+            --neutral-300: #d1d5db;
+            --neutral-600: #4b5563;
+            --neutral-700: #374151;
+            --neutral-900: #111827;
+            --border-radius: 12px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --transition: all 0.2s ease;
         }
 
-        /* Base Styles */
+        /* ============ GLOBAL STYLES ============ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        html {
-            font-size: var(--font-size);
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                        sans-serif;
+            background-color: var(--neutral-50);
+            color: var(--neutral-900);
+            line-height: 1.6;
         }
 
-        body {
-            background-color: var(--background);
-            color: var(--foreground);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.5;
-        }
-
-        /* Typography matching globals.css */
-        h1 { font-size: 2rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
-        h2 { font-size: 1.5rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
-        h3 { font-size: 1.25rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
-        h4 { font-size: 1rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
-        p { font-size: 1rem; font-weight: var(--font-weight-normal); line-height: 1.5; }
-        label { font-size: 1rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
-        button { font-size: 1rem; font-weight: var(--font-weight-medium); line-height: 1.5; }
-        input { font-size: 1rem; font-weight: var(--font-weight-normal); line-height: 1.5; }
-
-        /* Layout */
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-        .grid { display: grid; }
-        .grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-        .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-        .gap-4 { gap: 1rem; }
-        .gap-6 { gap: 1.5rem; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .items-center { align-items: center; }
-        .items-start { align-items: flex-start; }
-        .justify-between { justify-content: space-between; }
-        .justify-center { justify-content: center; }
-        .space-y-1 > * + * { margin-top: 0.25rem; }
-        .space-y-2 > * + * { margin-top: 0.5rem; }
-        .space-y-4 > * + * { margin-top: 1rem; }
-        .space-y-6 > * + * { margin-top: 1.5rem; }
-
-        /* Components */
-        .card {
-            background: var(--card);
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header { padding: 1.5rem 1.5rem 0; }
-        .card-content { padding: 1.5rem; }
-        .card-title { font-size: 1.25rem; font-weight: var(--font-weight-medium); margin-bottom: 0.5rem; }
-        .card-description { color: var(--muted-foreground); font-size: 0.875rem; }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: var(--radius);
-            font-size: 0.875rem;
-            font-weight: var(--font-weight-medium);
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: var(--primary-foreground);
-        }
-
-        .btn-primary:hover { opacity: 0.9; }
-        
-        .btn-secondary {
-            background: var(--secondary);
-            color: var(--secondary-foreground);
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--foreground);
-        }
-
-        .btn-ghost:hover { background: var(--accent); }
-
-        .btn-gradient {
-            background: linear-gradient(to right, #2563eb, #059669);
+        /* ============ HEADER ============ */
+        header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
             color: white;
-            height: 2.75rem;
-        }
-
-        .btn-gradient:hover {
-            background: linear-gradient(to right, #1d4ed8, #047857);
-        }
-
-        .input {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--input-background);
-            font-size: 0.875rem;
-            height: 2.75rem;
-        }
-
-        .input:focus {
-            outline: 2px solid var(--ring);
-            outline-offset: 2px;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            border-radius: 9999px;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            font-weight: var(--font-weight-medium);
-        }
-
-        .badge-default { background: var(--primary); color: var(--primary-foreground); }
-        .badge-secondary { background: var(--secondary); color: var(--secondary-foreground); }
-        .badge-destructive { background: var(--destructive); color: var(--destructive-foreground); }
-        .badge-success { background: var(--success); color: white; }
-        .badge-warning { background: var(--warning); color: white; }
-
-        /* Login Screen Specific */
-        .login-container {
-            min-height: 100vh;
-            background: linear-gradient(to bottom right, #dbeafe, #ffffff, #dcfce7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 28rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            border: 0;
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .login-logo {
-            background: linear-gradient(to bottom right, #2563eb, #059669);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            display: inline-block;
-            margin-right: 0.75rem;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--muted-foreground);
-            padding: 0.25rem;
-        }
-
-        .password-toggle:hover { color: var(--foreground); }
-
-        .security-notice {
-            background: #dbeafe;
-            border: 1px solid #93c5fd;
-        }
-
-        .footer-icons {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--muted-foreground);
-        }
-
-        /* Dashboard Layout */
-        .dashboard {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 250px;
-            background: var(--card);
-            border-right: 1px solid var(--border);
-            padding: 1rem;
-            overflow-y: auto;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
-        }
-
-        .nav-item {
-            width: 100%;
-            padding: 0.5rem 1rem;
-            text-align: left;
-            border: none;
-            background: none;
-            border-radius: var(--radius);
-            cursor: pointer;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--foreground);
-        }
-
-        .nav-item:hover { background: var(--accent); }
-        .nav-item.active { background: var(--primary); color: var(--primary-foreground); }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
+            padding: 2rem 0;
+            box-shadow: var(--shadow-md);
             margin-bottom: 2rem;
         }
 
-        .stat-card {
-            background: var(--card);
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 600;
-            margin: 0.5rem 0;
+        .header-left h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
         }
 
-        .stat-description {
-            color: var(--muted-foreground);
+        .header-left p {
             font-size: 0.875rem;
+            opacity: 0.9;
         }
 
-        .table {
-            width: 100%;
-            border-collapse: collapse;
+        .header-actions {
+            display: flex;
+            gap: 1rem;
         }
 
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
+        /* ============ CONTAINER ============ */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
         }
 
-        .table th {
-            font-weight: var(--font-weight-medium);
-            background: var(--muted);
+        /* ============ GRID LAYOUT ============ */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
         }
 
-        .progress {
-            width: 100%;
-            height: 0.5rem;
-            background: var(--muted);
-            border-radius: 9999px;
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        /* ============ CARDS ============ */
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
             overflow: hidden;
+            transition: var(--transition);
         }
 
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s ease;
+        .card:hover {
+            box-shadow: var(--shadow-lg);
         }
 
-        .tabs { width: 100%; }
-
-        .tab-list {
+        .card-header {
+            background-color: var(--neutral-100);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--neutral-200);
             display: flex;
-            background: var(--muted);
-            border-radius: var(--radius);
-            padding: 0.25rem;
-            margin-bottom: 1rem;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .tab-trigger {
-            flex: 1;
-            padding: 0.5rem 1rem;
-            border: none;
-            background: none;
-            border-radius: calc(var(--radius) - 2px);
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: var(--font-weight-medium);
-        }
-
-        .tab-trigger.active {
-            background: var(--background);
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-        }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .hidden { display: none !important; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .text-left { text-left: left; }
-
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-6 { margin-bottom: 1.5rem; }
-        .mt-2 { margin-top: 0.5rem; }
-        .mt-4 { margin-top: 1rem; }
-        .mt-6 { margin-top: 1.5rem; }
-        .ml-2 { margin-left: 0.5rem; }
-        .mr-2 { margin-right: 0.5rem; }
-        .mr-3 { margin-right: 0.75rem; }
-
-        .w-full { width: 100%; }
-        .h-4 { height: 1rem; }
-        .w-4 { width: 1rem; }
-        .h-11 { height: 2.75rem; }
-
-        .relative { position: relative; }
-        .pr-10 { padding-right: 2.5rem; }
-
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-spinner {
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid white;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Real-time updates */
-        .live-time {
-            font-family: 'Courier New', monospace;
+        .card-title {
+            font-size: 1.25rem;
             font-weight: 600;
-            color: var(--success);
+            color: var(--neutral-900);
+            margin: 0;
         }
 
-        .system-status {
-            display: flex;
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: var(--neutral-600);
+            margin-top: 0.25rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        /* ============ BUTTONS ============ */
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem;
-            border-radius: var(--radius);
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background-color: var(--neutral-300);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background-color: var(--neutral-200);
+            color: var(--neutral-900);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--neutral-300);
+        }
+
+        /* ============ VERIFICATION PANEL ============ */
+        #verificationPanel {
+            background: linear-gradient(135deg, var(--primary-light) 0%, #f0f4ff 100%);
+            border: 2px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--primary-dark);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #verificationPanel:hover {
+            background: linear-gradient(135deg, #e0ebff 0%, #e8edff 100%);
+            transform: scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+
+        #verificationPanel h4 {
+            font-size: 1.25rem;
             margin-bottom: 0.5rem;
+            color: var(--primary-dark);
         }
 
-        .status-operational { background: #dcfce7; color: #166534; }
-        .status-warning { background: #fef3c7; color: #92400e; }
-        .status-error { background: #fee2e2; color: #991b1b; }
-
-        /* Enhanced verification panels */
-        .verification-panel {
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        #verificationPanel p {
+            font-size: 0.95rem;
+            color: var(--neutral-600);
+            margin: 0;
         }
 
-        .scanning-active {
-            border-color: var(--info);
-            background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+        .verification-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .dashboard { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
-            .main-content { padding: 1rem; }
-            .grid-cols-2, .grid-cols-3, .grid-cols-4 { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: 1fr; }
+        /* ============ TABLE ============ */
+        .table-wrapper {
+            margin-top: 1.5rem;
+            overflow-x: auto;
         }
 
-        /* Icons */
-        .icon {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            text-align: center;
-            font-size: 0.875rem;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
         }
 
-        .icon-lg {
-            font-size: 2rem;
+        table thead {
+            background-color: var(--neutral-100);
         }
 
-        .icon-xl {
-            font-size: 3rem;
-        }
-
-        /* Enhanced gradients and effects */
-        .gradient-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #2563eb, #059669);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .feature-highlight {
-            background: linear-gradient(135deg, #f0f9ff, #ecfdf5);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+        table th {
             padding: 1rem;
-            margin: 0.5rem 0;
+            text-align: left;
+            font-weight: 600;
+            color: var(--neutral-700);
+            border-bottom: 2px solid var(--neutral-200);
         }
 
-        /* Enhanced notification */
-        .notification {
+        table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--neutral-200);
+            color: var(--neutral-600);
+        }
+
+        table tbody tr:hover {
+            background-color: var(--neutral-50);
+        }
+
+        table strong {
+            color: var(--neutral-900);
+            font-weight: 600;
+        }
+
+        /* ============ BADGES ============ */
+        .badge {
+            display: inline-block;
+            padding: 0.375rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        /* ============ STATS GRID ============ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--neutral-100);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--neutral-200);
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--neutral-600);
+            font-weight: 500;
+        }
+
+        /* ============ TOAST NOTIFICATIONS ============ */
+       #toastContainer {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: var(--radius);
-            color: white;
-            z-index: 1000;
-            animation: slideIn 0.3s ease-out;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
         }
 
-        .notification.success { background: var(--success); }
-        .notification.error { background: var(--destructive); }
-        .notification.warning { background: var(--warning); }
-        .notification.info { background: var(--info); }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* Module status indicators */
-        .module-status {
-            padding: 0.5rem;
-            border-radius: var(--radius);
-            margin: 0.25rem 0;
+        .toast {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 1rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            min-width: 280px;
+            max-width: 400px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
         }
 
-        .module-operational {
-            background: #dcfce7;
-            color: #166534;
-            border-left: 4px solid var(--success);
-        }
-
-        .module-warning {
-            background: #fef3c7;
-            color: #92400e;
-            border-left: 4px solid var(--warning);
-        }
-
-        .module-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-left: 4px solid var(--destructive);
-        }
-
-        /* Activity feed */
-        .activity-item {
+        .toast.success {
+            color: black;
+            background: white;
+            min-width: 1000px;
+            max-width: 1000px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999; /* above backdrop */
+            padding: 32px;
+            border-radius: 12px;
             display: flex;
-            align-items: start;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            border-radius: var(--radius);
-            margin-bottom: 0.75rem;
-            background: #fafafa;
-            border-left: 3px solid var(--border);
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
-        .activity-success { border-left-color: var(--success); }
-        .activity-warning { border-left-color: var(--warning); }
-        .activity-info { border-left-color: var(--info); }
-        .activity-error { border-left-color: var(--destructive); }
+        /* Backdrop for toast */
+        .toast.success::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            z-index: 9998;
+        }
+
+        .toast.error {
+            background: var(--error-color);
+        }
+
+        .toast.warning {
+            background: var(--warning-color);
+        }
+
+        .toast-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        /*  Added overlay backdrop for modal effect */
+        .toast-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /*  Improved toast styling with proper sizing and positioning */
+        .toast {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-message {
+            font-size: 18px;
+            font-weight: 600;
+            color: #22c55e;
+            text-align: center;
+        }
+
+        .toast-video {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            background: #000;
+            object-fit: cover;
+        }
+
+        .toast-countdown {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1f2937;
+            text-align: center;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* ============ CAMERA CONTAINER ============ */
+        #cameraContainer {
+            display: none;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        #liveCamera {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            transform: scaleX(-1);
+        }
+
+        /* ============ RECENT SCANS ============ */
+        #recentScans {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #recentScans div {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--neutral-200);
+            font-size: 0.9rem;
+            color: var(--neutral-600);
+        }
+
+        #recentScans div:last-child {
+            border-bottom: none;
+        }
+
+        #recentScans div:hover {
+            background-color: var(--neutral-50);
+        }
+
+        /* ============ HIDDEN ELEMENTS ============ */
+        #cameraSelector {
+            display: none;
+        }
+
+        /* ============ RESPONSIVE ============ */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header-left h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            table th, table td {
+                padding: 0.75rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Dashboard -->
-    <div id="dashboard" class="dashboard">
-        <!-- Sidebar -->
-         <?php include "sidebar.php"?>
+    <!-- HEADER -->
+    <header>
+        <div class="header-container">
+            <div class="header-left">
+                <h1>🔐 Attendance Management</h1>
+                <p>RFID + Biometric Face Verification System</p>
+            </div>
 
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Dashboard Overview Tab -->
-             <?php include "dashboard.php"?>
+        </div>
+    </header>
 
-            <!-- Employee Management Tab -->
-             <?php include "employee.php"?>
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer"></div>
 
-            <!-- Enhanced Attendance Tracking Tab -->
-             <?php include "employees.php"?>
+    <!-- MAIN CONTENT -->
+    <div class="container">
+        <div class="grid">
+            <!-- LEFT COLUMN: MAIN TRACKING -->
+            <div>
+                <!-- LIVE TRACKING CARD -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3 class="card-title">Live Attendance Tracking</h3>
+                            <p class="card-subtitle">Real-time attendance with dual verification</p>
+                        </div>
+                        <button onclick="window.showMaintenanceMessage()">📱 Scan RFID</button>
+                    </div>
+                    <div class="card-content">
+                        <!-- VERIFICATION PANEL -->
+                        <div id="verificationPanel">
+                            <div class="verification-icon">👤</div>
+                            <h4>Ready for Verification</h4>
+                            <p>Tap RFID card or click Scan RFID to begin</p>
+                        </div>
 
-            <!-- JavaScript for Manual Attendance -->
+                        <!-- TABLE -->
+                        <div class="table-wrapper">
+                            <table id="liveAttendanceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Clock In</th>
+                                        <th>Clock Out</th>
+                                        <th>Hours</th>
+                                        <th>Verification</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Enhanced Timesheet Processing Tab -->
-             <?php include "timesheet.php"?>
+            <!-- RIGHT COLUMN: STATS & RECENT -->
+            <div>
+                <!-- STATS CARD -->
+                
+                <!-- RECENT SCANS CARD -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    
+                    <div id="cameraContainer">
+                <video id="liveCamera" autoplay playsinline></video>
+            </div>
+    <select id="cameraSelector"></select>
+                </div>
 
-            <!-- Enhanced Payroll Processing Tab -->
-             <?php include "payroll.php"?>
 
-            <!-- Enhanced Reports & Security Tab -->
-             <?php include "report.php"?>
-
-            <!-- Enhanced Payroll Forecasting Tab -->
-
-            <!-- Enhanced Research Compliance Tab -->
+                <!-- RFID RESULT CARD -->
+                <div class="card" id="rfidResultPanel" style="margin-top: 1.5rem;">
+                    <!-- RFID result updates here -->
+                </div>
+            </div>
         </div>
     </div>
 
+    
+
+<script async src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
-     // ----------------- State & Variables -----------------
-    let currentTab = 'dashboard';
-    let currentSubtab = 'reports';
-    let systemStartTime = new Date();
+// --- GLOBAL FUNCTIONS (needed for onclick buttons) ---
+window.showMaintenanceMessage = function() {
+    const panel = document.getElementById('verificationPanel');
+    const originalContent = panel.innerHTML;
+    panel.innerHTML = `
+        <h4>Loading...</h4>
+        <p class="card-description text-blue-600 font-medium">⏳ Please wait</p>
+    `;
+    setTimeout(() => {
+        panel.innerHTML = `
+            <h4>System Under Maintenance</h4>
+            <p class="card-description text-red-600 font-medium">
+                ⚠️ RFID Scan system is currently unavailable.
+            </p>
+        `;
+        setTimeout(() => { panel.innerHTML = originalContent; }, 2000);
+    }, 1000);
+};
 
-    // ----------------- Tab Navigation -----------------
-function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+window.submitManual = function() {
+    const employeeId = document.getElementById('employee_id').value;
+    if (!employeeId) return showNotification('Please enter Employee ID', 'error');
 
-    const selectedTab = document.getElementById(`tab-${tabName}`);
-    if (selectedTab) selectedTab.classList.add('active');
+    fetch('record_attendance.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `employee_id=${employeeId}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showNotification(`${data.employee_name} Time ${data.type.toUpperCase()} recorded at ${data.time}`, 'success');
+            updateLiveAttendance(data);
+        } else if (data.status === 'warning') {
+            showNotification(`${data.employee_name || 'Employee #'+employeeId} ${data.message}`, 'warning');
+        } else {
+            showNotification(data.message, 'error');
+        }
+    })
+    .catch(err => console.error(err));
+};
 
-    const selectedNavItem = document.querySelector(`[data-tab="${tabName}"]`);
-    if (selectedNavItem) selectedNavItem.classList.add('active');
+window.startCameraTest = async function() {
+    const video = document.getElementById("liveCamera");
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+    video.play();
 
-    currentTab = tabName;
-
-    // 👇 Auto-select first subtab if the tab has one
-    if (tabName === 'reports') {
-        switchSubtab('reports');  // auto show reports subtab
-    }
+    // Continuously check for a face
+    video.addEventListener("play", () => {
+        const canvas = faceapi.createCanvasFromMedia(video);
+        document.body.append(canvas);
+        
+        const displaySize = { width: video.width, height: video.height };
+        faceapi.matchDimensions(canvas, displaySize);
+        
+        setInterval(async () => {
+            const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+            if (detections) {
+                startCountdown();
+            }
+        }, 1000);
+    });
 }
 
-    // ----------------- Subtab Navigation -----------------
-    function switchSubtab(subtabName) {
-        document.querySelectorAll('[id^="subtab-"]').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('[data-subtab]').forEach(trigger => trigger.classList.remove('active'));
+function startCountdown() {
+    let counter = 3;
+    const interval = setInterval(() => {
+        document.getElementById("countdown").innerText = counter;
+        counter--;
+        if (counter < 0) {
+            clearInterval(interval);
+            captureAndVerifyFace();
+        }
+    }, 1000);
+}
+</script>
 
-        const selectedSubtab = document.getElementById(`subtab-${subtabName}`);
-        if (selectedSubtab) selectedSubtab.classList.add('active');
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    loadLiveAttendance(); // Initial load
+});
 
-        const selectedTrigger = document.querySelector(`[data-subtab="${subtabName}"]`);
-        if (selectedTrigger) selectedTrigger.classList.add('active');
-
-        currentSubtab = subtabName;
+document.addEventListener("DOMContentLoaded", async () => {
+    loadLiveAttendance(true);
+    // --- DYNAMIC FACE-API.JS LOADING ---
+    if (!window.faceapi) {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/face-api.js";
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
-    // ----------------- Real-time Updates -----------------
-    function updateRealTimeData() {
-        const now = new Date();
-        const timeElements = document.querySelectorAll('#currentTime, #dashboardTime');
-        timeElements.forEach(el => { if (el) el.textContent = now.toLocaleTimeString(); });
-
-        const lastSyncElement = document.getElementById('lastSync');
-        if (lastSyncElement) {
-            const lastSyncMinutes = Math.floor((now - systemStartTime) / 60000);
-            lastSyncElement.textContent = `${lastSyncMinutes} min ago`;
+    // --- FACE API MODELS LOADING ---
+    let faceModelsLoaded = false;
+    async function loadFaceModels() {
+        if (faceModelsLoaded) return;
+        try {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('/project/models');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('/project/models');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('/project/models');
+            faceModelsLoaded = true;
+        } catch (error) {
+            console.error('Model loading error:', error);
+            showNotification('Failed to load face models', 'error');
         }
     }
-    setInterval(updateRealTimeData, 1000);
 
-    // ----------------- RFID Scan Simulation -----------------
-    function simulateRFIDScan() {
-        const verificationPanel = document.getElementById('verificationPanel');
-        const scanBtn = document.getElementById('scanRFID');
+    // --- CAMERA MANAGEMENT ---
+    let activeStream = null;
 
-        verificationPanel.classList.add('scanning-active');
-        verificationPanel.innerHTML = `
-            <div class="text-center">
-                <div class="loading-spinner" style="margin: 0 auto 1rem; width: 3rem; height: 3rem; border: 3px solid var(--info); border-top: 3px solid transparent;"></div>
-                <h4>Scanning RFID Card...</h4>
-                <p class="card-description">Please hold card near scanner</p>
-            </div>
-        `;
-        scanBtn.disabled = true;
-        scanBtn.textContent = 'Scanning...';
-
-        setTimeout(() => {
-            verificationPanel.classList.remove('scanning-active');
-            verificationPanel.innerHTML = `
-                <div class="text-center">
-                    <div class="icon icon-xl mb-4" style="color: var(--success);">✅</div>
-                    <h4>RFID Verified Successfully</h4>
-                    <p class="card-description">RC001 - Christel Arpon</p>
-                    <div class="mt-4">
-                        <span class="badge badge-success">RFID Success</span>
-                        <span class="badge badge-success ml-2">Face Recognition: 94%</span>
-                    </div>
-                </div>
-            `;
-            scanBtn.disabled = false;
-            scanBtn.innerHTML = '<span class="icon">📱</span><span class="ml-2">Scan RFID</span>';
-            showNotification('RFID scan successful - Welcome Christel!', 'success');
-        }, 2000);
+    async function loadCameras() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(d => d.kind === "videoinput");
+            const selector = document.getElementById("cameraSelector");
+            selector.innerHTML = "";
+            videoDevices.forEach((device, index) => {
+                const opt = document.createElement("option");
+                opt.value = device.deviceId;
+                opt.textContent = device.label || `Camera ${index + 1}`;
+                selector.appendChild(opt);
+            });
+        } catch (error) {
+            console.error("Camera list error:", error);
+            showNotification("Unable to load camera list.", "error");
+        }
     }
 
-    // ----------------- Notifications -----------------
+    navigator.mediaDevices.getUserMedia({ video: true }).finally(loadCameras);
+
+    // --- NOTIFICATIONS ---
     function showNotification(message, type = 'success') {
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.textContent = message;
         document.body.appendChild(notification);
-        setTimeout(() => { notification.style.transform = 'translateX(100%)'; setTimeout(() => notification.remove(), 300); }, 3000);
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 
-    // ----------------- Event Listeners -----------------
-    document.addEventListener('DOMContentLoaded', function() {
-        // Tab navigation
-        document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => switchTab(item.getAttribute('data-tab')));
-        });
+    // --- TIME FORMATTING ---
+    function formatTime(timeStr) {
+        if (!timeStr) return '-';
+        const [h, m, s] = timeStr.split(':');
+        const date = new Date();
+        date.setHours(h, m, s);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
 
-        // Subtab navigation
-        document.querySelectorAll('[data-subtab]').forEach(trigger => {
-            trigger.addEventListener('click', () => switchSubtab(trigger.getAttribute('data-subtab')));
-        });
+    // --- LIVE ATTENDANCE ---
+    function loadLiveAttendance(forceUpdate = false) {
+        const storedData = JSON.parse(localStorage.getItem('attendanceData') || '{}');
+        const lastUpdated = storedData.lastUpdated ? new Date(storedData.lastUpdated) : null;
 
-        // RFID scan button
-        const scanBtn = document.getElementById('scanRFID');
-        if (scanBtn) scanBtn.addEventListener('click', simulateRFIDScan);
+        if (forceUpdate || !lastUpdated || (new Date() - lastUpdated) > 5 * 60 * 1000) {
+            fetch('get_attendance.php')
+                .then(res => res.json())
+                .then(data => {
+                    data.lastUpdated = new Date();
+                    localStorage.setItem('attendanceData', JSON.stringify(data));
+                    populateAttendanceTable(data);
+                });
+        } else {
+            populateAttendanceTable(storedData);
+        }
+    }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.altKey) {
-                switch(e.key) {
-                    case '1': switchTab('dashboard'); break;
-                    case '2': switchTab('employees'); break;
-                    case '3': switchTab('attendance'); break;
-                    case '4': switchTab('payroll'); break;
-                    case '5': switchTab('reports'); break;
-                    case '6': switchTab('research'); break;
-                }
+    setInterval(() => { loadLiveAttendance(true); }, 60000);
+
+    // Manual Refresh Function
+    window.refreshAttendance = function() {
+        loadLiveAttendance(true); // Force update from server
+        showNotification('Attendance data refreshed!', 'success');
+    }
+
+     function showToast(message, type = 'success', duration = 3000, refreshPage = false) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+            if (refreshPage) location.reload(); // Refresh page after toast disappears
+        }, duration);
+
+        return toast;
+    }
+
+    function populateAttendanceTable(data) {
+        const table = document.getElementById('liveAttendanceTable');
+        const recent = document.getElementById('recentScans');
+        table.innerHTML = '';
+        recent.innerHTML = '';
+        let recentEntries = [];
+        data.forEach(row => {
+            const timeIn = formatTime(row.time_in);
+            const timeOut = formatTime(row.time_out);
+            let hours = '-';
+            if (row.time_in && row.time_out) {
+                const inTime = new Date(`1970-01-01T${row.time_in}`);
+                const outTime = new Date(`1970-01-01T${row.time_out}`);
+                hours = ((outTime - inTime) / (1000 * 60 * 60)).toFixed(2) + 'h';
             }
+            const status = row.time_in ? 'Present' : '-';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${row.employee_name}</strong></td>
+                <td>${timeIn}</td>
+                <td>${timeOut}</td>
+                <td>${hours}</td>
+                <td><span class="badge badge-success">Manual</span></td>
+                <td><span class="badge badge-success">${status}</span></td>
+            `;
+            table.appendChild(tr);
+            if (row.time_in) recentEntries.push(`${timeIn} - ${row.employee_name} (IN)`);
+            if (row.time_out) recentEntries.push(`${timeOut} - ${row.employee_name} (OUT)`);
         });
+        recentEntries.sort((a, b) => b.localeCompare(a));
+        recentEntries.slice(0, 10).forEach(entry => {
+            const div = document.createElement('div');
+            div.innerText = entry;
+            recent.appendChild(div);
+        });
+    }
+
+    function updateLiveAttendance(data) {
+        loadLiveAttendance();
+    }
+
+    // --- STATS & SECURITY ---
+    function updateStats(attendanceData) {
+        let totalRFID = 0, totalFace = 0, totalPresent = 0;
+        attendanceData.forEach(row => {
+            if (row.verification === 'RFID') totalRFID++;
+            if (row.verification === 'Face') totalFace++;
+            if (row.time_in) totalPresent++;
+        });
+        document.getElementById('totalRFID').innerText = totalRFID;
+        document.getElementById('totalFace').innerText = totalFace;
+        document.getElementById('totalPresent').innerText = totalPresent;
+    }
+
+    function updateSecurityAlerts(attendanceData) {
+        const alertsCard = document.querySelector('#tab-attendance .card:nth-child(2) .card-content');
+        alertsCard.innerHTML = `
+            <p>No security alerts detected</p>
+            <p class="card-description">System monitoring active</p>
+            <div class="mt-4">
+                <div class="badge badge-success">Fraud Prevention: Active</div>
+            </div>
+        `;
+    }
+
+    function refreshDashboard() {
+        const data = JSON.parse(localStorage.getItem('attendanceData') || '[]');
+        updateStats(data);
+        updateSecurityAlerts(data);
+    }
+
+    setInterval(refreshDashboard, 500);
+
+    // --- RFID BUFFER ---
+    let rfidBuffer = '';
+    let rfidTimer;
+
+    document.addEventListener('keydown', (e) => {
+        if (['Shift','Control','Alt'].includes(e.key)) return;
+        if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+        rfidBuffer += e.key;
+        clearTimeout(rfidTimer);
+        rfidTimer = setTimeout(() => {
+            if (rfidBuffer.length > 0) {
+                processRFID(rfidBuffer.trim());
+                rfidBuffer = '';
+            }
+        }, 50);
     });
 
-    // ----------------- Currency Formatting -----------------
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 0 }).format(amount);
+    // --- RFID + FACE ATTENDANCE ---
+    async function processRFID(rfid) {
+        const res = await fetch('verify_rfid.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `rfid_tag=${encodeURIComponent(rfid)}`
+        });
+        const data = await res.json();
+        if (!data.success) return showNotification(data.message, "error");
+
+        const employee = data.employee;
+        await loadFaceModels();
+        await startCameraTest();
+
+        // Show RFID Verified and countdown below camera controls
+        document.getElementById("rfidResultPanel").innerHTML = `
+            <h3>RFID Verified: ${employee.first_name} ${employee.last_name}</h3>
+            <p class="card-description text-blue-600">Please stay still for <strong id="countdown">3</strong> seconds...</p>
+        `;
+
+        let counter = 3;
+        const interval = setInterval(() => {
+            counter--;
+            document.getElementById("countdown").innerText = counter;
+            if (counter === 0) {
+                clearInterval(interval);
+                captureAndVerifyFace(employee);
+            }
+        }, 1000);
     }
 
-    function formatCurrencyCompact(amount) {
-        if (amount >= 1000000) return '₱' + (amount / 1000000).toFixed(1) + 'M';
-        if (amount >= 1000) return '₱' + (amount / 1000).toFixed(0) + 'K';
-        return '₱' + amount.toLocaleString();
+    async function captureAndVerifyFace(employee) {
+        const video = document.getElementById("liveCamera");
+        if (!video.videoWidth || !video.videoHeight) return showNotification("Camera not ready", "error");
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+
+        const liveImage = await faceapi.detectSingleFace(canvas, options)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        if (!liveImage) return showNotification("Face not detected. Please try again.", "error");
+
+        console.log("📸 RFID Employee:", employee.first_name, employee.last_name);
+        console.log("📸 Stored Face Path:", employee.face_image_path);
+
+        const storedImage = await faceapi.fetchImage(employee.face_image_path);
+        const storedDescriptor = await faceapi.detectSingleFace(storedImage, options)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+        if (!storedDescriptor) {
+            console.error("❌ Stored face image invalid or no face detected in stored image");
+            return showNotification("Stored face image invalid.", "error");
+        }
+
+        const distance = faceapi.euclideanDistance(liveImage.descriptor, storedDescriptor.descriptor);
+        const MATCH_THRESHOLD = 0.45;
+        
+        console.log("🔍 Face Matching Results:");
+        console.log("   Live Face Descriptor:", liveImage.descriptor);
+        console.log("   Stored Face Descriptor:", storedDescriptor.descriptor);
+        console.log("   Euclidean Distance:", distance);
+        console.log("   Match Threshold:", MATCH_THRESHOLD);
+        
+        if (distance <= MATCH_THRESHOLD) {
+            console.log("✅ MATCH! RFID verified. Face match confirmed.");
+            finalizeAttendance(employee.employee_id, "Face");
+        } else {
+            console.error("❌ NO MATCH! Distance (" + distance + ") exceeds threshold (" + MATCH_THRESHOLD + ")");
+            showNotification("Face mismatch detected!", "error");
+        }
     }
 
-    console.log('🏗️ Dashboard JS loaded - Django authentication ready');
+    function finalizeAttendance(employee_id, verificationType) {
+        // Capture the current frame from the video as base64
+        const video = document.getElementById("liveCamera");
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        const face_image = canvas.toDataURL("image/jpeg"); // base64
 
+        fetch('record_attendance_face.php', {
+            method: 'POST',
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `employee_id=${employee_id}&face_image=${encodeURIComponent(face_image)}&verification=${verificationType}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            console.log("PHP Debug Log:", data.debug);
+            if (data.success) {
+                showNotification("Attendance confirmed (Face Match).", "success");
+                loadLiveAttendance();
+                refreshDashboard();
+                
+                // Refresh the page after successful attendance
+                location.reload();
+            } else {
+                showNotification(data.message, "error");
+            }
+        });
+    }
 
+    // --- INITIAL LOAD ---
+    loadLiveAttendance();
+
+    // --- CAMERA START FUNCTION FOR BUTTON ---
+    window.startCameraTest = async function() {
+        const video = document.getElementById("liveCamera");
+        const container = document.getElementById("cameraContainer");
+        const cameraId = document.getElementById("cameraSelector").value;
+        try {
+            if (activeStream) activeStream.getTracks().forEach(track => track.stop());
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: cameraId ? { deviceId: { exact: cameraId } } : true,
+                audio: false
+            });
+            activeStream = stream;
+            video.srcObject = stream;
+            container.style.display = "block";
+            showNotification("Camera feed active.", "success");
+        } catch (error) {
+            console.error("Camera Error:", error);
+            showNotification("Unable to start the selected camera.", "error");
+        }
+    };
+
+    // Force console output
+    console.clear();
+    console.log("✅ Script loaded - Console is active");
+    window.addEventListener('error', (e) => console.error("Global Error:", e.error));
+    window.addEventListener('unhandledrejection', (e) => console.error("Unhandled Promise:", e.reason));
+
+    await startCameraTest();
+});
 </script>
-</script>
-
-</body>
-</html>
+<

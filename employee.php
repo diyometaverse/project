@@ -313,13 +313,13 @@ while ($row = $result->fetch_assoc()) {
                             </div> -->
 
                             <div class="mt-4">
-                                <label class="font-bold">Face Registration</label>
+                                <label class="font-bold">Face Registration</label> <br>
 
-                                <div class="mb-2">
+                                <div class="mb-2 hidden">
                                     <select id="cameraSelector" class="border p-2 rounded w-full"></select>
                                 </div>
 
-                                <video id="addEmpCamera" autoplay playsinline style="width:100%; max-width:350px; border-radius:10px;"></video>
+                                <video id="addEmpCamera" autoplay playsinline style="width:100%; max-width:350px; border-radius:10px; transform: scaleX(-1);"></video>
 
                                 <button type="button" class="btn btn-primary mt-3" onclick="captureFaceImage()">Capture Face</button>
 
@@ -396,9 +396,23 @@ while ($row = $result->fetch_assoc()) {
           <input type="text" name="rfid_tag" id="edit_rfid_tag" class="input">
         </div>
         <div>
-          <label>Face ID</label>
-          <input type="text" name="face_id" id="edit_face_id" class="input">
+        <label class="font-bold">Face Registration</label> <br>
+
+            <div class="mb-2 hidden">
+                <select id="editCameraSelector" class="border p-2 rounded w-full"></select>
+            </div>
+
+            <video id="editEmpCamera" autoplay playsinline style="width:100%; max-width:350px; border-radius:10px; transform: scaleX(-1);"></video>
+
+            <button type="button" class="btn btn-primary mt-3" onclick="captureEditFaceImage()">Capture Face</button>
+
+            <div id="editPreviewContainer" class="mt-3 hidden">
+                <p class="font-bold">Captured Image:</p>
+                <img id="editCapturedPreview" style="width:150px; border-radius:10px;">
+            </div>
         </div>
+
+        <input type="hidden" id="edit_captured_face_image" name="face_image">
       </div>
       <div class="flex justify-end mt-6 space-x-2">
         <button type="button" class="btn btn-secondary" onclick="closeModals('editEmployeeModal')">Cancel</button>
@@ -520,6 +534,73 @@ while ($row = $result->fetch_assoc()) {
 ============================= */
 
 let liveStream = null;
+let editLiveStream = null;
+async function startEditEmployeeCamera() {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === "videoinput");
+
+        const selector = document.getElementById("editCameraSelector");
+        selector.innerHTML = "";
+        videoDevices.forEach((device, index) => {
+            let opt = document.createElement("option");
+            opt.value = device.deviceId;
+            opt.textContent = device.label || `Camera ${index + 1}`;
+            selector.appendChild(opt);
+        });
+
+        if (videoDevices.length === 0) throw new Error("No camera found");
+
+        // Use first camera by default
+        const firstDeviceId = videoDevices[0].deviceId;
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: firstDeviceId } },
+            audio: false
+        });
+
+        editLiveStream = stream;
+        const video = document.getElementById("editEmpCamera");
+        video.srcObject = stream;
+        await video.play();
+
+    } catch (err) {
+        console.error("Edit camera error:", err);
+        showNotification("Cannot access camera for editing.", "error");
+    }
+}
+
+// Capture face image for Edit Modal
+function captureEditFaceImage() {
+    try {
+        const video = document.getElementById("editEmpCamera");
+
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/jpeg", 0.9);
+
+        document.getElementById("edit_captured_face_image").value = imageData;
+
+        // Show preview
+        const preview = document.getElementById("editCapturedPreview");
+        preview.src = imageData;
+        document.getElementById("editPreviewContainer").classList.remove("hidden");
+
+        showNotification("Face image captured.", "success");
+
+    } catch (err) {
+        console.error("Edit capture error:", err);
+        showNotification("Failed to capture image.", "error");
+    }
+}
+
+// Start Edit camera when Edit Modal opens
+function openEditEmployeeModal() {
+    openModal('editEmployeeModal');
+    startEditEmployeeCamera();
+}
 
 // Load available cameras
 async function loadCameraDevices() {
@@ -546,32 +627,36 @@ async function loadCameraDevices() {
 // Start camera feed
 async function startAddEmployeeCamera() {
     try {
-        await loadCameraDevices();
+        // Get all video devices
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === "videoinput");
 
-        const selector = document.getElementById("cameraSelector");
-        const deviceId = selector.value;
+        if (videoDevices.length === 0) throw new Error("No camera found");
 
-        // Stop previous stream safely
-        if (liveStream) {
-            liveStream.getTracks().forEach(t => t.stop());
-        }
+        // Select first camera automatically
+        const firstDeviceId = videoDevices[0].deviceId;
 
-        liveStream = await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: deviceId ? { exact: deviceId } : undefined },
+        // Get stream from first camera
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: firstDeviceId } },
             audio: false
         });
 
+        liveStream = stream;
         const video = document.getElementById("addEmpCamera");
-        video.srcObject = liveStream;
+        video.srcObject = stream;
+        await video.play();
 
-    } catch (error) {
-        console.error("Camera start error:", error);
+        console.log("✅ Camera started: " + (videoDevices[0].label || "Camera 1"));
+    } catch (err) {
+        console.error("Camera error:", err);
         showNotification("Cannot access camera.", "error");
     }
 }
 
+
 // Change camera when user selects another device
-document.getElementById("cameraSelector").addEventListener("change", startAddEmployeeCamera);
+document.addEventListener("DOMContentLoaded", startAddEmployeeCamera);
 
 
 /* =============================
@@ -668,9 +753,8 @@ function editEmployee(id) {
             document.getElementById("edit_daily_rate").value = emp.daily_rate;
             document.getElementById("edit_status").value = emp.status;
             document.getElementById("edit_rfid_tag").value = emp.rfid_tag;
-            document.getElementById("edit_face_id").value = emp.face_id;
 
-            openModal('editEmployeeModal');
+            openEditEmployeeModal();
         })
         .catch(err => console.error("Error:", err));
 }
@@ -689,6 +773,7 @@ document.getElementById("editEmployeeForm").addEventListener("submit", function(
         if (data.success) {
             showNotification(data.message, 'success');
             closeModals('editEmployeeModal');
+            location.reload();
             loadEmployees();
         } else {
             alert("❌ " + data.message);
@@ -713,6 +798,7 @@ document.getElementById("editEmployeeForm").addEventListener("submit", function(
         if (data.success) {
             showNotification(data.message, 'success');
             closeModals('addEmployeeModal');
+            location.reload();
             loadEmployees(); // reload the employee table
         } else {
             alert("❌ " + data.message);

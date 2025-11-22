@@ -1,274 +1,309 @@
+<?php
+session_start();
+include 'db.php';
 
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
 
-<div id="tab-attendance" class="tab-content">
-                <div class="mb-6">
-                    <h1>Attendance Management</h1>
-                    <p class="card-description">RFID + Biometric Face Verification System</p>
-                </div>
+// Fetch all employees
+$result = $conn->query("SELECT employee_id, first_name, last_name, department, position, face_image_path FROM employees ORDER BY first_name ASC");
+if (!$result) die("Employee query failed: " . $conn->error);
 
-                <div class="grid grid-cols-1 gap-6" style="grid-template-columns: 2fr 1fr;">
-                    <!-- Live Tracking -->
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h3 class="card-title">Live Attendance Tracking</h3>
-                                    <p class="card-description">Real-time attendance with dual verification</p>
-                                </div>
-                                <button class="btn btn-primary" id="scanRFID">
-                                    <span class="icon">📱</span>
-                                    <span class="ml-2">Scan RFID</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-content">
-                            <div class="verification-panel mb-6" id="verificationPanel">
-                                <div class="text-center">
-                                    <div class="icon icon-xl mb-4">📱</div>
-                                    <h4>Ready for Verification</h4>
-                                    <p class="card-description">Tap RFID card or click Scan RFID to begin</p>
-                                </div>
-                            </div>
+$employees = [];
+while ($row = $result->fetch_assoc()) {
+    $employees[] = $row;
+}
 
-                            <!-- Existing Live Tracking Table -->
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Clock In</th>
-                                        <th>Clock Out</th>
-                                        <th>Hours</th>
-                                        <th>Verification</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="liveAttendanceTable">
+// Today's attendance
+$today = date("Y-m-d");
+$sql_attendance = "SELECT * FROM attendance WHERE date='$today'";
+$attendance_result = $conn->query($sql_attendance);
+if (!$attendance_result) die("Attendance query failed: " . $conn->error);
 
-                                </tbody>
-                            </table>
-                        </div>
+$attendance_data = [];
+while ($row = $attendance_result->fetch_assoc()) {
+    $attendance_data[$row['employee_id']] = $row;
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Management</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f4f4f4; margin:0; padding:20px; padding-top:70px;}
+.table { width:100%; border-collapse: collapse; margin-top:10px; background:#fff;}
+.table th, .table td { border:1px solid #ddd; padding:8px; text-align:center; }
+.table th { background: #f0f0f0; position: sticky; top: 0; }
+.btn { padding:5px 10px; border-radius:5px; cursor:pointer; margin:2px; font-weight:600; }
+.btn-success { background-color:#16a34a; color:white; border:none; }
+.btn-warning { background-color:#f59e0b; color:white; border:none; }
+.btn-primary { background-color:#2563eb; color:white; border:none; }
+.card { background:#fff; padding:15px; border-radius:10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+.stats-card .stats-content { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+.stat-item { background:#f9f9f9; padding:10px; border-radius:8px; text-align:center; }
+.badge { padding:3px 8px; border-radius:4px; font-size:0.9rem; }
+.badge-success { background:#16a34a; color:#fff; }
+.badge-primary { background:#2563eb; color:#fff; }
+.badge-info { background:#0ea5e9; color:#fff; }
+#recentScans { max-height: 200px; overflow-y:auto; }
+#recentScans div { padding:5px 10px; border-bottom:1px solid #eee; }
+#cameraContainer { text-align:center; display:none; margin-top:10px; }
+
+#cameraBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #111;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 999;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    display: none;
+}
+#cameraBar video {
+    width: 120px;
+    height: 90px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 2px solid #fff;
+}
+#cameraBar button {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+</style>
+<script async src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+
+<!-- Camera Bar -->
+<div id="cameraBar">
+    <video id="cameraBarVideo" autoplay playsinline muted></video>
+    <button class="btn btn-warning" onclick="stopCamera()">✖ Close</button>
+</div>
+
+<div id="tab-attendance">
+    <h1>Attendance Management</h1>
+    <p class="card-description">RFID + Biometric Face Verification System</p>
+
+    <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+
+        <!-- Left Column: Attendance Table -->
+        <div class="card">
+            <h3>Live Attendance Tracking</h3>
+            <button class="btn btn-primary" onclick="showMaintenanceMessage()">📱Scan RFID</button>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Department</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach($employees as $emp):
+                        $att = $attendance_data[$emp['employee_id']] ?? null;
+                    ?>
+                    <tr>
+                        <td><?= htmlspecialchars($emp['first_name'].' '.$emp['last_name']) ?></td>
+                        <td><?= htmlspecialchars($emp['department']) ?></td>
+                        <td id="timein-<?= $emp['employee_id'] ?>"><?= $att['time_in'] ?? '-' ?></td>
+                        <td id="timeout-<?= $emp['employee_id'] ?>"><?= $att['time_out'] ?? '-' ?></td>
+                        <td id="status-<?= $emp['employee_id'] ?>"><?= ucfirst($att['status'] ?? 'absent') ?></td>
+                        <td>
+                            <?php if(!$att || !$att['time_in']): ?>
+                                <button class="btn btn-success" onclick="clockIn(<?= $emp['employee_id'] ?>)">Time In</button>
+                                <button class="btn btn-primary" onclick="verifyFace(<?= $emp['employee_id'] ?>)">Face Verify</button>
+                            <?php endif; ?>
+                            <?php if($att && !$att['time_out']): ?>
+                                <button class="btn btn-warning" onclick="clockOut(<?= $emp['employee_id'] ?>)">Time Out</button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+            <!-- Stats -->
+            <div class="card stats-card">
+                <h3>Verification Stats</h3>
+                <div class="stats-content" id="stats">
+                    <div class="stat-item">
+                        <div>Total RFID</div>
+                        <div><span class="badge badge-info" id="totalRFID">0</span></div>
                     </div>
-
-                    <!-- Right Column Widgets -->
-                    <div class="space-y-6">
-                        <!-- Verification Stats -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Verification Stats</h3>
-                            </div>
-                            <div class="card-content space-y-4">
-                                <!-- ... existing content ... -->
-                            </div>
-                        </div>
-
-                        <!-- Security Alerts -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Security Alerts</h3>
-                            </div>
-                            <div class="card-content">
-                                <div class="text-center">
-                                    <div class="icon icon-xl" style="color: var(--success);">✅</div>
-                                    <p>No security violations detected</p>
-                                    <p class="card-description">All verifications successful</p>
-                                    <div class="mt-4">
-                                        <div class="badge badge-success">Fraud Prevention: Active</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Scans -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Recent Scans</h3>
-                            </div>
-                            <div class="card-content" id="recentScans">
-                                <!-- ... existing content ... -->
-                            </div>
-                        </div>
+                    <div class="stat-item">
+                        <div>Total Face</div>
+                        <div><span class="badge badge-primary" id="totalFace">0</span></div>
                     </div>
-                </div>
-                <br>
-                <!-- Manual Attendance Entry -->
-                <div class="card mt-8">
-                    <div class="card-header flex items-center justify-between">
-                        <h3 class="card-title">Manual Attendance Entry</h3>
-                        <button class="btn btn-primary" onclick="addManualRow()">+ Add Record</button>
-                    </div>
-                    <div class="card-content">
-                        <table class="table" id="manualAttendanceTable">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Position</th>
-                                    <th>Date</th>
-                                    <th>Time</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Dynamic manual rows will go here -->
-                            </tbody>
-                        </table>
+                    <div class="stat-item">
+                        <div>Total Present</div>
+                        <div><span class="badge badge-primary" id="totalPresent">0</span></div>
                     </div>
                 </div>
             </div>
-            <script>
 
+            <!-- Security Alerts -->
+            <div class="card">
+                <h3>Security Alerts</h3>
+                <div>No security alerts detected</div>
+                <div class="mt-2"><span class="badge badge-success">Fraud Prevention: Active</span></div>
+            </div>
 
-                function updatePosition(select) {
-                    let row = select.closest("tr");
-                    let positionInput = row.querySelector("input[name='position']");
-                    let selected = select.options[select.selectedIndex];
-                    positionInput.value = selected.getAttribute("data-position") || "";
-                }
+            <!-- Recent Scans -->
+            <div class="card">
+                <h3>Recent Scans</h3>
+                <div id="recentScans"></div>
+            </div>
 
+            <!-- Manual Entry -->
+            <div class="card">
+                <h3>Manual Attendance Entry</h3>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="number" id="employee_id" placeholder="Enter Employee ID" style="flex:1;">
+                    <button class="btn btn-primary" onclick="submitManual()">Submit</button>
+                </div>
+                <div id="manualResult" style="text-align:center; margin-top:10px; color:green;"></div>
+            </div>
+        </div>
+    </div>
 
-                function removeRow(button) {
-                    button.closest("tr").remove();
-                }
+    <!-- Camera for Face Verification -->
+    <div id="cameraContainer">
+        <video id="liveCamera" autoplay playsinline style="width:100%; max-width:400px;"></video>
+    </div>
+</div>
 
-                function saveManualRow(button) {
-                    const row = button.closest("tr");
-                    const employee_id = row.querySelector("select[name='employee_id']").value;
-                    const position = row.querySelector("input[name='position']").value;
-                    const date = row.querySelector("input[name='date']").value;
-                    const time = row.querySelector("input[name='time']").value;
-
-                    if (!employee_id || !date || !time) {
-                        alert("Please fill in all required fields.");
-                        return;
-                    }
-
-                    fetch("save_attendance.php", {
-                        method: "POST",
-                        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-                        body: `employee_id=${employee_id}&position=${encodeURIComponent(position)}&date=${date}&time=${time}&method=manual`
-                    })
-                    .then(response => response.text())
-                    .then(data => {
-                        alert(data);
-                        button.disabled = true;
-                    })
-                    .catch(err => console.error(err));
-                }
-
-                </script>
-                <script>
-                document.getElementById("employeeSelect").addEventListener("change", function() {
-                    let selected = this.options[this.selectedIndex];
-                    let position = selected.getAttribute("data-position") || "";
-                    document.getElementById("employeePosition").value = position;
-                });
-
-                // Handle form submit via AJAX
-                document.getElementById("manualAttendanceForm").addEventListener("submit", function(e) {
-                    e.preventDefault();
-
-                    let formData = new FormData(this);
-
-                    fetch("save_attendance.php", {
-                        method: "POST",
-                        body: formData
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        alert(data.message);
-                        if (data.success) {
-                            // Reset form
-                            this.reset();
-                            document.getElementById("employeePosition").value = "";
-
-                            // Append new row to Live Attendance Table
-                            let table = document.getElementById("liveAttendanceTable");
-                            let row = table.insertRow();
-
-                            row.innerHTML = `
-                                <td><strong>${data.full_name}</strong></td>
-                                <td>${data.clock_in}</td>
-                                <td>-</td>
-                                <td class="live-time">0h</td>
-                                <td>
-                                    <div class="flex gap-1">
-                                        <span class="badge badge-success">Manual</span>
-                                    </div>
-                                </td>
-                                <td><span class="badge badge-success">Present</span></td>
-                            `;
-                        }
-                    })
-                    .catch(err => console.error(err));
-                });
-                </script>
 <script>
-// function loadAttendance() {
-//     fetch("fetch_attendance.php")
-//         .then(res => res.json())
-//         .then(data => {
-//             const tbody = document.getElementById("liveAttendanceTable");
-//             tbody.innerHTML = "";
-
-//             data.forEach(row => {
-//                 const clockIn  = row.clock_in ? new Date(row.clock_in).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
-//                 const clockOut = row.clock_out ? new Date(row.clock_out).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "-";
-
-//                 // calculate hours if both times exist
-//                 let hours = "-";
-//                 if (row.clock_in && row.clock_out) {
-//                     const inTime  = new Date(row.clock_in);
-//                     const outTime = new Date(row.clock_out);
-//                     const diffMs  = outTime - inTime;
-//                     const diffH   = Math.floor(diffMs / (1000*60*60));
-//                     const diffM   = Math.floor((diffMs % (1000*60*60)) / (1000*60));
-//                     hours = `${diffH}h ${diffM}m`;
-//                 }
-// tbody.innerHTML += `
-//     <tr>
-//         <td><strong>${row.full_name}</strong></td>
-//         <td>${clockIn}</td>
-//         <td>${clockOut}</td>
-//         <td class="live-time">${hours}</td>
-//         <td>
-//             <div class="flex gap-1">
-//                 <span class="badge badge-success">${row.method}</span>
-//             </div>
-//         </td>
-//         <td>
-//             ${!row.clock_out 
-//                 ? `<button class="btn btn-warning btn-sm" onclick="clockOut(${row.attendance_id})">Clock Out</button>` 
-//                 : `<span class="badge badge-${row.status === 'present' ? 'success' : 'warning'}">
-//                      ${row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-//                    </span>`
-//             }
-//         </td>
-//     </tr>
-// `;
-//             });
-//         })
-//         .catch(err => console.error(err));
-// }
-
-// // Load immediately
-// loadAttendance();
-
-// // Refresh every 5 seconds
-// setInterval(loadAttendance, 5000);
-
-function clockOut(attendance_id) {
-    if (!confirm("Are you sure you want to clock out this employee?")) return;
-
-    fetch("clock_out.php", {
-        method: "POST",
-        headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: `attendance_id=${attendance_id}`
-    })
-    .then(res => res.text())
-    .then(msg => {
-        alert(msg);
-        loadAttendance(); // refresh table
-    })
-    .catch(err => console.error(err));
+// --- Clock In/Out Functions ---
+function clockIn(empId){
+    fetch('attendance_mark.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({employee_id:empId, action:'time_in', date:'<?= $today ?>'})
+    }).then(res=>res.json()).then(data=>{
+        if(data.success){
+            document.getElementById('timein-'+empId).textContent = data.time_in;
+            document.getElementById('status-'+empId).textContent = 'Present';
+            refreshStats();
+        } else { alert(data.message); }
+    });
 }
 
+function clockOut(empId){
+    fetch('attendance_mark.php', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({employee_id:empId, action:'time_out', date:'<?= $today ?>'})
+    }).then(res=>res.json()).then(data=>{
+        if(data.success){
+            document.getElementById('timeout-'+empId).textContent = data.time_out;
+        } else { alert(data.message); }
+    });
+}
+
+// --- Face Verification ---
+let cameraStream = null;
+
+function startCameraBar() {
+    const bar = document.getElementById('cameraBar');
+    const video = document.getElementById('cameraBarVideo');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+        cameraStream = stream;
+        video.srcObject = stream;
+        bar.style.display = 'flex';
+        video.play();
+    })
+    .catch(err => console.error('Camera error:', err));
+}
+
+function stopCamera() {
+    const bar = document.getElementById('cameraBar');
+    const video = document.getElementById('cameraBarVideo');
+    if(cameraStream){
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+    video.srcObject = null;
+    bar.style.display = 'none';
+}
+
+function verifyFace(empId){
+    startCameraBar(); // Show live camera bar
+    document.getElementById('cameraContainer').style.display = 'block';
+
+    navigator.mediaDevices.getUserMedia({ video:true }).then(stream=>{
+        const video = document.getElementById('liveCamera');
+        video.srcObject = stream;
+        video.play();
+        setTimeout(()=>{ captureFace(empId); },3000);
+    }).catch(err=>console.error(err));
+}
+
+function captureFace(empId){
+    const video = document.getElementById('liveCamera');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+    const face_image = canvas.toDataURL('image/jpeg');
+
+    fetch('record_attendance_face.php',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`employee_id=${empId}&face_image=${encodeURIComponent(face_image)}&verification=Face`
+    }).then(res=>res.json()).then(data=>{
+        if(data.success){ alert('Face Verified and Attendance Recorded'); refreshStats(); location.reload(); }
+        else{ alert(data.message); }
+    });
+}
+
+// --- Manual Entry ---
+function submitManual(){
+    const empId = document.getElementById('employee_id').value;
+    if(!empId) return alert('Enter Employee ID');
+    fetch('record_attendance.php',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`employee_id=${empId}`
+    }).then(res=>res.json()).then(data=>{
+        document.getElementById('manualResult').textContent = data.message;
+        refreshStats();
+        location.reload();
+    });
+}
+
+// --- Dummy Stats Update ---
+function refreshStats(){
+    const rows = document.querySelectorAll('.table tbody tr');
+    let totalPresent = 0, totalFace = 0, totalRFID = 0;
+    rows.forEach(r=>{
+        const status = r.querySelector('td:nth-child(5)').textContent;
+        if(status==='Present') totalPresent++;
+    });
+    document.getElementById('totalPresent').textContent = totalPresent;
+}
 </script>
+
+</body>
+</html>

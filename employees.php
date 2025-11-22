@@ -97,10 +97,6 @@ if (!isset($_SESSION['user_id'])) {
     font-size: 1.1rem;
     padding: 5px 10px;
 }
-
-#liveCamera {
-    transform: scaleX(-1);
-}
 </style>
 
 <div id="tab-attendance" class="tab-content">
@@ -263,6 +259,7 @@ window.startCameraTest = async function() {
     const video = document.getElementById("liveCamera");
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     video.srcObject = stream;
+    video.style.transform = "scaleX(1)";
     video.play();
 
     // Continuously check for a face
@@ -611,6 +608,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             activeStream = stream;
             video.srcObject = stream;
+            video.style.transform = "scaleX(1)";
             container.style.display = "block";
             showNotification("Camera feed active.", "success");
         } catch (error) {
