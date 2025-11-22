@@ -207,7 +207,7 @@ if (!isset($_SESSION['user_id'])) {
     </div>
     <div id="rfidResultPanel" class="mt-2 text-center"></div>
 <div id="cameraContainer" style="display:none; margin-top:15px; text-align:center;">
-    <video id="liveCamera" autoplay playsinline style="width:100%; max-width:400px;"></video>
+    <video id="liveCamera" autoplay playsinline style="width:100%; max-width:400px; display: none;"></video>
 </div>
 </div>
 

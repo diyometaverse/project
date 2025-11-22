@@ -286,7 +286,17 @@ while ($row = $result->fetch_assoc()) {
                             </div>
                             <div>
                                 <label>Position</label>
-                                <input type="text" name="position" class="input" required>
+                                <select name="position" class="input" required>
+                                    <option value="" disabled selected required>Select Position</option>
+                                    <option value="Civil Engineer">Civil Engineer</option>
+                                    <option value="Electrical Engineer">Electrical Engineer</option>
+                                    <option value="Hr/admin">Hr/admin</option>
+                                    <option value="Construction Worker">Construction Worker</option>
+                                    <option value="Helper">Helper</option>
+                                    <option value="Forman">Forman</option>
+                                    <option value="Mason">Mason</option>
+                                    <option value="Safety Officer">Safety Officer</option>
+                                </select>
                             </div>
                             <div>
                                 <label>Daily Rate</label>
@@ -376,10 +386,19 @@ while ($row = $result->fetch_assoc()) {
           <label>Department</label>
           <input type="text" name="department" id="edit_department" class="input">
         </div>
-        <div>
-          <label>Position</label>
-          <input type="text" name="position" id="edit_position" class="input">
-        </div>
+         <div>
+                                <label>Position</label>
+                                <select name="position" id="edit_position" class="input" required>
+                                    <option value="Civil Engineer">Civil Engineer</option>
+                                    <option value="Electrical Engineer">Electrical Engineer</option>
+                                    <option value="Hr/admin">Hr/admin</option>
+                                    <option value="Construction Worker">Construction Worker</option>
+                                    <option value="Helper">Helper</option>
+                                    <option value="Forman">Forman</option>
+                                    <option value="Mason">Mason</option>
+                                    <option value="Safety Officer">Safety Officer</option>
+                                </select>
+                            </div>
         <div>
           <label>Daily Rate</label>
           <input type="number" step="0.01" name="daily_rate" id="edit_daily_rate" class="input">

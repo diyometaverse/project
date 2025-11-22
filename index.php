@@ -807,10 +807,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 .then(data => {
                     data.lastUpdated = new Date();
                     localStorage.setItem('attendanceData', JSON.stringify(data));
-                    populateAttendanceTable(data);
                 });
         } else {
-            populateAttendanceTable(storedData);
         }
     }
 
@@ -837,59 +835,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return toast;
     }
 
-    function populateAttendanceTable(data) {
-        const table = document.getElementById('liveAttendanceTable');
-        const recent = document.getElementById('recentScans');
-        table.innerHTML = '';
-        recent.innerHTML = '';
-        let recentEntries = [];
-        data.forEach(row => {
-            const timeIn = formatTime(row.time_in);
-            const timeOut = formatTime(row.time_out);
-            let hours = '-';
-            if (row.time_in && row.time_out) {
-                const inTime = new Date(`1970-01-01T${row.time_in}`);
-                const outTime = new Date(`1970-01-01T${row.time_out}`);
-                hours = ((outTime - inTime) / (1000 * 60 * 60)).toFixed(2) + 'h';
-            }
-            const status = row.time_in ? 'Present' : '-';
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${row.employee_name}</strong></td>
-                <td>${timeIn}</td>
-                <td>${timeOut}</td>
-                <td>${hours}</td>
-                <td><span class="badge badge-success">Manual</span></td>
-                <td><span class="badge badge-success">${status}</span></td>
-            `;
-            table.appendChild(tr);
-            if (row.time_in) recentEntries.push(`${timeIn} - ${row.employee_name} (IN)`);
-            if (row.time_out) recentEntries.push(`${timeOut} - ${row.employee_name} (OUT)`);
-        });
-        recentEntries.sort((a, b) => b.localeCompare(a));
-        recentEntries.slice(0, 10).forEach(entry => {
-            const div = document.createElement('div');
-            div.innerText = entry;
-            recent.appendChild(div);
-        });
-    }
-
-    function updateLiveAttendance(data) {
-        loadLiveAttendance();
-    }
-
     // --- STATS & SECURITY ---
-    function updateStats(attendanceData) {
-        let totalRFID = 0, totalFace = 0, totalPresent = 0;
-        attendanceData.forEach(row => {
-            if (row.verification === 'RFID') totalRFID++;
-            if (row.verification === 'Face') totalFace++;
-            if (row.time_in) totalPresent++;
-        });
-        document.getElementById('totalRFID').innerText = totalRFID;
-        document.getElementById('totalFace').innerText = totalFace;
-        document.getElementById('totalPresent').innerText = totalPresent;
-    }
 
     function updateSecurityAlerts(attendanceData) {
         const alertsCard = document.querySelector('#tab-attendance .card:nth-child(2) .card-content');
@@ -901,14 +847,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             </div>
         `;
     }
-
-    function refreshDashboard() {
-        const data = JSON.parse(localStorage.getItem('attendanceData') || '[]');
-        updateStats(data);
-        updateSecurityAlerts(data);
-    }
-
-    setInterval(refreshDashboard, 500);
 
     // --- RFID BUFFER ---
     let rfidBuffer = '';
@@ -990,9 +928,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const MATCH_THRESHOLD = 0.45;
         
         console.log("🔍 Face Matching Results:");
-        console.log("   Live Face Descriptor:", liveImage.descriptor);
-        console.log("   Stored Face Descriptor:", storedDescriptor.descriptor);
-        console.log("   Euclidean Distance:", distance);
         console.log("   Match Threshold:", MATCH_THRESHOLD);
         
         if (distance <= MATCH_THRESHOLD) {
@@ -1020,13 +955,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         })
         .then(res => res.json())
         .then(data => {
-            console.log("PHP Debug Log:", data.debug);
             if (data.success) {
                 showNotification("Attendance confirmed (Face Match).", "success");
-                loadLiveAttendance();
-                refreshDashboard();
                 
-                // Refresh the page after successful attendance
                 location.reload();
             } else {
                 showNotification(data.message, "error");

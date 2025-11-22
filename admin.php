@@ -578,6 +578,7 @@ alert('Employee added successfully!');
              <?php include "employee.php"?>
 
             <!-- Enhanced Attendance Tracking Tab -->
+            <?php include "employees.php"?>
            
 
             <!-- JavaScript for Manual Attendance -->
